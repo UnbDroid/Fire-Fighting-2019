@@ -9,7 +9,7 @@ typedef struct {
 	int prog;
 } competition_t;
 
-void MyFunction(competition_t competition){
+void MyFunction(){
 	printf("Coe Rapaziada");
 }
 
