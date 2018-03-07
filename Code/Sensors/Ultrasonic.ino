@@ -1,4 +1,5 @@
-/*--------------------------- Ultrasonic Sensor Reading --------------------------*/
+/*--------------------------- Ultrasonic Sensor Reading --------------------------
+  ------------ reference: https://playground.arduino.cc/Code/NewPing -------------*/
 
 #include <NewPing.h>
 
