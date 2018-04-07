@@ -17,5 +17,6 @@ void setup() {
 void loop() {
 	onPump();
 	delay(1000);
-	offPump(3000);
+	offPump();
+	delay(3000);
 }
