@@ -1,43 +1,58 @@
-#include <Wire.h>
-#include <MPU6050.h>
+#include "MPU9250.h"
 
+// Time between gyro updates
+#define TIME_STEP 0.01
 
-MPU6050 mpu;
+// An MPU9250 object with the MPU-9250 sensor on I2C bus 0 with address 0x68
+MPU9250 IMU(Wire,0x68);
+int status;
 
-unsigned long timer = 0;
-float timeStep = 0.01;
+float radX    = 0;
+float radY    = 0;
+float radZ    = 0;
+float degreeX = 0; 
+float degreeY = 0;
+float degreeZ = 0;
 
-float pitch = 0;
-float roll = 0;
-float yaw = 0;
+unsigned long timer;
 
- void inicializaGiro() {
-    long int t1,t0 = millis();
-    while((!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G)))// && (t1 - t0) < 3000 )
-    {
-      delay(500);
-    }
-      mpu.calibrateGyro();
-      mpu.setThreshold(3);
-      InicioDoGiro = 1;
+// Converts angles from rads to degrees
+void GyroRad2Degree() {
+  //degreeX = (radX * 180) / PI;
+  //degreeY = (radY * 180) / PI;
+  degreeZ = (radZ * 180) / PI;
 }
 
-void atualizaGiro() {
+// Gets gyro's raw readings (rad/s) and integrates them into angles (rad).
+// Angles are also converted from rad to degrees. 
+void UpdateGyro() {
   timer = millis();
-  Vector norm = mpu.readNormalizeGyro();
-  //pitch += norm.YAxis * timeStep;
-  //roll += norm.XAxis * timeStep;
-  yaw +=  norm.ZAxis * timeStep;
-  delay((timeStep*1000) - (millis() - timer));
+
+  IMU.readSensor();
+  //radX = IMU.getGyroX_rads();
+  //radY = IMU.getGyroY_rads();
+  radZ += IMU.getGyroZ_rads() * TIME_STEP;
+
+  GyroRad2Degree();
+  delay((TIME_STEP * 1000)- (millis() - timer));
+}
+
+// Gyro setup function
+void StartGyro() {
+  status = IMU.begin();
+  if (status < 0)
+    Serial.println("IMU initialization unsuccessful");
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  while(!Serial);
+  StartGyro();
 }
- 
+
 void loop() {
-  atualizaGiro();  
-  Serial.print("\nYaw: ");
-  Serial.print(dist);
-  delay(500);
+  UpdateGyro();
+  Serial.print("Z = ");
+  Serial.println(degreeZ);
+  delay(100);
 }

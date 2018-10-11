@@ -1,95 +1,105 @@
 /*--------------------------- Motor Driver Usage ---------------------------*/
 
+// Pins used for motors
 #define PONTE_H_A 38
 #define PONTE_H_B 39
+#define MOT_PWM   9
 
-#define MOT_PWM 9
+// Encoder constants
+#define ENC_A       2     // Pin
+#define ENC_COUNTS  560   // Encoder counts equivalent to 1 full rotation
+#define ENC_OFFSET  11    // Offset to estabilize motor position
 
-#define ENC_A       2
-#define ENC_B       3
-#define ENC_COUNTS  4192
+// Possible ways to rotate
+#define FORWARD     1
+#define BACKWARDS   0
 
-#define KP 0.5
+// Constant used when converting a distance in cm to degrees
+#define WHEEL_RADIUS 4
 
-volatile long encoder0Pos = 0;
-volatile long encoder1Pos = 0;
+volatile long enc_pos = 0;
+byte way              = FORWARD;
+byte pot              = 127;
 
-float counts(float degree){
-  return ((ENC_COUNTS * degree) / 360);
+// Calculates how many degrees the motor must rotate in order to
+// achieve the distance received as argument
+float Dist2Degrees(float distance) {
+  return (180 * distance) / (PI * WHEEL_RADIUS);
 }
 
-void doEncoderA() {
+// Calculates how many encoder counts are equivalent to a rotation
+// which meets the degrees received as argument 
+long Degrees2Counts(float degrees) {
+  return round((ENC_COUNTS * degrees) / 360) - ENC_OFFSET;
+}
+
+// Increments or decrements the encoder counts depending on which way
+// the motor is rotating 
+void DoEncoder() {
   noInterrupts();
-  if(digitalRead(ENC_A) == HIGH){
-    if(digitalRead(ENC_B) == LOW)
-      encoder0Pos +=  1;
-    else
-      encoder0Pos -=  1;
-  }else{
-    if(digitalRead(ENC_B) == HIGH)
-      encoder0Pos +=  1;
-    else
-      encoder0Pos -=  1;
+  if(way == FORWARD)
+    enc_pos += 1;
+  else
+    enc_pos -= 1;
+  interrupts();
+}
+
+// As we are not using a controller to estabilize the motor's rotation
+// when it reaches the position we commanded, inercia makes it rotate a little
+// further than expected, creating the need of an offset.
+
+// This algorithm helps us get a constant offset everytime the motor is asked to stop
+void StopMotor() {
+  digitalWrite(PONTE_H_A, HIGH);
+  digitalWrite(PONTE_H_B, HIGH);
+  digitalWrite(PONTE_H_A, HIGH);
+  digitalWrite(PONTE_H_B, HIGH);
+  digitalWrite(PONTE_H_A, HIGH);
+  digitalWrite(PONTE_H_B, HIGH);
+}
+
+// Makes the motor rotate in the specified way until it reaches the distance
+// received as argument
+void WalkCm(float distance, byte way) {
+  long pos = Degrees2Counts(Dist2Degrees(distance));
+  enc_pos  = 0;
+
+  if (way == FORWARD) {
+    digitalWrite(PONTE_H_A, HIGH);
+    digitalWrite(PONTE_H_B, LOW);
+    analogWrite(MOT_PWM, pot);  
+  } else {
+    digitalWrite(PONTE_H_A, LOW);
+    digitalWrite(PONTE_H_B, HIGH);
+    analogWrite(MOT_PWM, pot);
   }
-  interrupts();
+
+  while(enc_pos < pos);
+  StopMotor();
 }
 
-void doEncoderB() {
-  noInterrupts();
-  encoder1Pos += 1;
-  interrupts();
-}
-
-void startEncoder() {
+// Encoder setup function
+void StartEncoder() {
   pinMode(ENC_A, INPUT);
-  pinMode(ENC_B, INPUT);
-  // Encoder1
-  attachInterrupt(digitalPinToInterrupt(ENC_A), doEncoderA, CHANGE);
-  // Encoder2
-  //attachInterrupt(digitalPinToInterrupt(ENC_B), doEncoderB, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENC_A), DoEncoder, CHANGE);
 }
 
-void startDriver() {
+// Motor Driver setup function
+void StartDriver() {
   pinMode(PONTE_H_A, OUTPUT);
   pinMode(PONTE_H_B, OUTPUT);
   pinMode(MOT_PWM, OUTPUT);
-
-  pinMode(ENC_A, OUTPUT);
-  pinMode(ENC_B, OUTPUT);
-}
-
-void pid(){                                 // Por enquanto só tá implementado o proporcional
-  pot = KP * (counts(3600) - encoder0Pos);
-  Serial.println(encoder0Pos);
-  if(pot > 0){
-    digitalWrite(PONTE_H_A, HIGH);
-    digitalWrite(PONTE_H_B, LOW);
-    if(pot >= 255)
-      analogWrite(MOT_PWM, 255);
-    else
-      analogWrite(MOT_PWM, pot);
-  }else if(pot < 0){
-    digitalWrite(PONTE_H_A, LOW);
-    digitalWrite(PONTE_H_B, HIGH);
-    pot = -pot;
-    if(pot >= 255)
-      analogWrite(MOT_PWM, 255);
-    else
-      analogWrite(MOT_PWM, pot);
-  }else{
-    digitalWrite(PONTE_H_A, HIGH);
-    digitalWrite(PONTE_H_B, HIGH);
-  }
 }
 
 void setup() {
-  startDriver();
-  startEncoder();
+  StartDriver();
+  StartEncoder();
   Serial.begin(9600);
 }
 
-float pot;
-
 void loop() {
-  pid();
+  WalkCm(10, FORWARD);
+  delay(1000);
+  WalkCm(10, BACKWARDS);
+  delay(1000);
 }
