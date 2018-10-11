@@ -1,14 +1,22 @@
 /*--------------------------- Motor Driver Usage ---------------------------*/
 
-// Pins used for motors
-#define PONTE_H_A 38
-#define PONTE_H_B 39
-#define MOT_PWM   9
+// Pins used for left motors
+#define LA_H_BRIDGE 34
+#define LB_H_BRIDGE 35
+#define LMOT_PWM    8
+
+// Pins used for right motors
+#define RA_H_BRIDGE 38
+#define RB_H_BRIDGE 39
+#define RMOT_PWM    9
+
+// Pins used for encoders
+#define L_ENC       2   // Left motor's encoder
+#define R_ENC       3   // Right motor's encoder
 
 // Encoder constants
-#define ENC_A       2     // Pin
-#define ENC_COUNTS  560   // Encoder counts equivalent to 1 full rotation
-#define ENC_OFFSET  11    // Offset to estabilize motor position
+#define ENC_COUNTS  560 // Encoder counts equivalent to 1 full rotation
+#define ENC_OFFSET  11  // Offset to estabilize motor position
 
 // Possible ways to rotate
 #define FORWARD     1
@@ -17,9 +25,12 @@
 // Constant used when converting a distance in cm to degrees
 #define WHEEL_RADIUS 4
 
-volatile long enc_pos = 0;
-byte way              = FORWARD;
-byte pot              = 127;
+volatile long lenc_pos  = 0;        // Left encoder's position
+volatile long renc_pos  = 0;        // Right encoder's position
+byte          l_way     = FORWARD;  // Left motor's rotation way
+byte          r_way     = FORWARD;  // Right motor's rotation way
+byte          l_pot     = 127;      // Left motor's power
+byte          r_pot     = 127;      // Right motor's power
 
 // Calculates how many degrees the motor must rotate in order to
 // achieve the distance received as argument
@@ -33,68 +44,135 @@ long Degrees2Counts(float degrees) {
   return round((ENC_COUNTS * degrees) / 360) - ENC_OFFSET;
 }
 
-// Increments or decrements the encoder counts depending on which way
-// the motor is rotating 
-void DoEncoder() {
+// The functions below increment or decrement the encoder counts depending on
+// which way the motor is rotating. They use interruptions.
+
+// For left motor's encoder
+void DoEncoderL() {
   noInterrupts();
-  if(way == FORWARD)
-    enc_pos += 1;
+  if(l_way == FORWARD)
+    lenc_pos += 1;
   else
-    enc_pos -= 1;
+    lenc_pos -= 1;
+  interrupts();
+}
+
+// For right motor's encoder
+void DoEncoderR() {
+  noInterrupts();
+  if(r_way == FORWARD)
+    renc_pos += 1;
+  else
+    renc_pos -= 1;
   interrupts();
 }
 
 // As we are not using a controller to estabilize the motor's rotation
-// when it reaches the position we commanded, inercia makes it rotate a little
-// further than expected, creating the need of an offset.
+// when it reaches the position we commanded, inercia makes it rotate a
+// little further than expected, creating the need of an offset.
 
-// This algorithm helps us get a constant offset everytime the motor is asked to stop
-void StopMotor() {
-  digitalWrite(PONTE_H_A, HIGH);
-  digitalWrite(PONTE_H_B, HIGH);
-  digitalWrite(PONTE_H_A, HIGH);
-  digitalWrite(PONTE_H_B, HIGH);
-  digitalWrite(PONTE_H_A, HIGH);
-  digitalWrite(PONTE_H_B, HIGH);
+// This algorithm helps us get a constant offset everytime the motor is
+// asked to stop
+void StopMotor(byte A_H_BRIDGE, byte B_H_BRIDGE) {
+  digitalWrite(A_H_BRIDGE, HIGH);
+  digitalWrite(B_H_BRIDGE, HIGH);
+  digitalWrite(A_H_BRIDGE, HIGH);
+  digitalWrite(B_H_BRIDGE, HIGH);
+  digitalWrite(A_H_BRIDGE, HIGH);
+  digitalWrite(B_H_BRIDGE, HIGH);
 }
 
-// Makes the motor rotate in the specified way until it reaches the distance
-// received as argument
-void WalkCm(float distance, byte way) {
-  long pos = Degrees2Counts(Dist2Degrees(distance));
-  enc_pos  = 0;
+// Resets encoders' position variable. Called before using these variables in
+// order to prevent an overflow.
+void ResetEncs() {
+  lenc_pos = 0;
+  renc_pos = 0;
+}
 
+// The functions below make the motor start rotating in the direction defined
+// as FORWARDS.
+
+// For left motor
+void OnFwdL() {
+  l_way = FORWARD;
+  digitalWrite(LA_H_BRIDGE, HIGH);
+  digitalWrite(LB_H_BRIDGE, LOW);
+  analogWrite(LMOT_PWM, l_pot);
+}
+
+// For right motor
+void OnFwdR() {
+  r_way = FORWARD;
+  digitalWrite(RA_H_BRIDGE, HIGH);
+  digitalWrite(RB_H_BRIDGE, LOW);
+  analogWrite(RMOT_PWM, r_pot);
+}
+
+// The functions below make the motor start rotating in the direction defined
+// as BACKWARDS.
+
+// For left motor
+void OnRevL() {
+  l_way = BACKWARDS;
+  digitalWrite(LA_H_BRIDGE, LOW);
+  digitalWrite(LB_H_BRIDGE, HIGH);
+  analogWrite(LMOT_PWM, l_pot);
+}
+
+// For right motor
+void OnRevR() {
+  r_way = BACKWARDS;
+  digitalWrite(RA_H_BRIDGE, LOW);
+  digitalWrite(RB_H_BRIDGE, HIGH);
+  analogWrite(RMOT_PWM, r_pot);
+}
+
+// Makes the motors rotate in the specified way until they reach the distance
+// received as argument
+void WalkCm(float distance, byte way) {  
+  // The line below calculates how many encoder counts the motor must rotate 
+  // to achieve the specified distance
+  long pos = Degrees2Counts(Dist2Degrees(distance));
+  
+  ResetEncs();
   if (way == FORWARD) {
-    digitalWrite(PONTE_H_A, HIGH);
-    digitalWrite(PONTE_H_B, LOW);
-    analogWrite(MOT_PWM, pot);  
+    OnFwdL();
+    OnFwdR();
   } else {
-    digitalWrite(PONTE_H_A, LOW);
-    digitalWrite(PONTE_H_B, HIGH);
-    analogWrite(MOT_PWM, pot);
+    OnRevL();
+    OnRevR();
   }
 
-  while(enc_pos < pos);
-  StopMotor();
+  while(lenc_pos < pos || renc_pos < pos);
+  StopMotor(LA_H_BRIDGE, LB_H_BRIDGE);
+  StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
 }
 
-// Encoder setup function
-void StartEncoder() {
-  pinMode(ENC_A, INPUT);
-  attachInterrupt(digitalPinToInterrupt(ENC_A), DoEncoder, CHANGE);
+// Encoders' setup function
+void StartEncoders() {
+  // Left encoder
+  pinMode(L_ENC, INPUT);
+  attachInterrupt(digitalPinToInterrupt(L_ENC), DoEncoderL, CHANGE);
+  // Right encoder
+  pinMode(R_ENC, INPUT);
+  attachInterrupt(digitalPinToInterrupt(R_ENC), DoEncoderR, CHANGE);
 }
 
 // Motor Driver setup function
 void StartDriver() {
-  pinMode(PONTE_H_A, OUTPUT);
-  pinMode(PONTE_H_B, OUTPUT);
-  pinMode(MOT_PWM, OUTPUT);
+  // Left motor
+  pinMode(LA_H_BRIDGE, OUTPUT);
+  pinMode(LB_H_BRIDGE, OUTPUT);
+  pinMode(LMOT_PWM, OUTPUT);
+  // Right motor
+  pinMode(RA_H_BRIDGE, OUTPUT);
+  pinMode(RB_H_BRIDGE, OUTPUT);
+  pinMode(RMOT_PWM, OUTPUT);
 }
 
 void setup() {
   StartDriver();
-  StartEncoder();
-  Serial.begin(9600);
+  StartEncoders();
 }
 
 void loop() {
