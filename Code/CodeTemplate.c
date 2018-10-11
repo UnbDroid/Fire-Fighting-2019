@@ -9,19 +9,19 @@ typedef struct {
 	int prog;
 } competition_t;
 
-void MyFunction(){
+void MyFunction() {
 	printf("Coe Rapaziada");
 }
 
-int main(){
+int main() {
 	const int VANESSA = 4;
 	int rebeca = 25;
 	int miniBau = 72;
-	competition_t fireFighting;
+	competition_t fire_fighting;
 
-	fireFighting.mechanic = DIGO + VANESSA;
-	fireFighting.electronics = rebeca + miniBau;
-	fireFighting.prog = LUCAS;
+	fire_fighting.mechanic = DIGO + VANESSA;
+	fire_fighting.electronics = rebeca + miniBau;
+	fire_fighting.prog = LUCAS;
   
 	MyFunction();
   
