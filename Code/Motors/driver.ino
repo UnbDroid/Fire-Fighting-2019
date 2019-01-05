@@ -103,8 +103,8 @@ void OnFwdL() {
 // For right motor
 void OnFwdR() {
   r_way = FORWARD;
-  digitalWrite(RA_H_BRIDGE, HIGH);
-  digitalWrite(RB_H_BRIDGE, LOW);
+  digitalWrite(RA_H_BRIDGE, LOW);
+  digitalWrite(RB_H_BRIDGE, HIGH);
   analogWrite(RMOT_PWM, r_pot);
 }
 
@@ -122,8 +122,8 @@ void OnRevL() {
 // For right motor
 void OnRevR() {
   r_way = BACKWARDS;
-  digitalWrite(RA_H_BRIDGE, LOW);
-  digitalWrite(RB_H_BRIDGE, HIGH);
+  digitalWrite(RA_H_BRIDGE, HIGH);
+  digitalWrite(RB_H_BRIDGE, LOW);
   analogWrite(RMOT_PWM, r_pot);
 }
 
@@ -132,7 +132,7 @@ void OnRevR() {
 void WalkCm(float distance, byte way) {  
   // The line below calculates how many encoder counts the motor must rotate 
   // to achieve the specified distance
-  long pos = Degrees2Counts(Dist2Degrees(distance));
+  volatile long pos = Degrees2Counts(Dist2Degrees(distance));
   
   ResetEncs();
   if (way == FORWARD) {
@@ -143,7 +143,13 @@ void WalkCm(float distance, byte way) {
     OnRevR();
   }
 
-  while(lenc_pos < pos || renc_pos < pos);
+  while(abs(lenc_pos) < pos || abs(renc_pos) < pos){
+    //Serial.print("Left: ");
+    //Serial.print(lenc_pos);
+    //Serial.print("\tRight: ");
+    //Serial.println(renc_pos);    
+  }
+
   StopMotor(LA_H_BRIDGE, LB_H_BRIDGE);
   StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
 }
@@ -173,11 +179,13 @@ void StartDriver() {
 void setup() {
   StartDriver();
   StartEncoders();
+  Serial.begin(9600);
 }
 
 void loop() {
-  WalkCm(10, FORWARD);
-  delay(1000);
-  WalkCm(10, BACKWARDS);
-  delay(1000);
+  //delay(5000);
+  WalkCm(30, FORWARD);
+  delay(2000);
+  WalkCm(30, BACKWARDS);
+  delay(2000);
 }
