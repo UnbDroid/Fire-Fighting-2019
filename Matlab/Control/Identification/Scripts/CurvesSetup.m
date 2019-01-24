@@ -1,5 +1,8 @@
 %%Given the 3 tables imported to matlab, this script generate all values to be used in the identification. 
 
+h = 0.002;
+batery_level = 15.55;
+
 time1 = Square1{1:end,1};
 time2 = Square2{1:end,1};
 time3 = Triangular{1:end,1};
@@ -16,6 +19,9 @@ pwm3 = Triangular{1:end,2};
 pwm1 = pwm1.';
 pwm2 = pwm2.';
 pwm3 = pwm3.';
+pwm1 = pwm1*batery_level/255;
+pwm2 = pwm2*batery_level/255;
+pwm3 = pwm3*batery_level/255;
 
 encoder_left1 = Square1{1:end,3};
 encoder_left2 = Square2{1:end,3};
@@ -23,9 +29,9 @@ encoder_left3 = Triangular{1:end,3};
 encoder_left1 = encoder_left1.';
 encoder_left2 = encoder_left2.';
 encoder_left3 = encoder_left3.';
-speed_left1 = diff(encoder_left1);
-speed_left2 = diff(encoder_left2);
-speed_left3 = diff(encoder_left3);
+speed_left1 = diff(encoder_left1)/h;
+speed_left2 = diff(encoder_left2)/h;
+speed_left3 = diff(encoder_left3)/h;
 speed_left1(length(time1)) = speed_left1(length(time1)-1);
 speed_left2(length(time2)) = speed_left2(length(time2)-1);
 speed_left3(length(time3)) = speed_left3(length(time3)-1);
@@ -36,9 +42,9 @@ encoder_right3 = Triangular{1:end,4};
 encoder_right1 = encoder_right1.';
 encoder_right2 = encoder_right2.';
 encoder_right3 = encoder_right3.';
-speed_right1 = diff(encoder_right1);
-speed_right2 = diff(encoder_right2);
-speed_right3 = diff(encoder_right3);
+speed_right1 = diff(encoder_right1)/h;
+speed_right2 = diff(encoder_right2)/h;
+speed_right3 = diff(encoder_right3)/h;
 speed_right1(length(time1)) = speed_right1(length(time1)-1);
 speed_right2(length(time2)) = speed_right2(length(time2)-1);
 speed_right3(length(time3)) = speed_right3(length(time3)-1);

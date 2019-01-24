@@ -8,7 +8,7 @@ function [delta_negative_l,delta_positive_l,delta_negative_r,delta_positive_r] =
     sum_pos_r = 0;
     sum_neg_r = 0;
     
-    for i = 1:length(time3);
+    for i = 1:length(pwm3);
         if abs(speed_left3(1,i)) == 0
             speed_left3(2,i) = 0;
         elseif speed_left3(1,i) > 0

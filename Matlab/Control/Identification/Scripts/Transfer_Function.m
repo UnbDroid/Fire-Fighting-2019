@@ -4,42 +4,40 @@ function [tau_l,K_l,tau_r,K_r] = Transfer_Function(delta_negative_l, delta_posit
     load('Data1.mat');
     CurvesSetup;
     t_sampling = 0.002;
-    size = length(time2);
+    size = length(pwm1);
         
     for i = 1:size
 
-        w_l(i) = speed_left2(1,i);
-        w_r(i) = speed_right2(1,i);
+        w_l(i) = speed_left1(1,i);
+        w_r(i) = speed_right1(1,i);
         
     end
 
     for i = 1:size
         
-        if pwm2(1,i) > delta_negative_l && pwm2(1,i) < delta_positive_l
+        if pwm1(1,i) > delta_negative_l && pwm1(1,i) < delta_positive_l
             u_l(i) = 0;
-        elseif pwm2(1,i) <= delta_negative_l
+        elseif pwm1(1,i) <= delta_negative_l
 
-            u_l(i) = pwm2(1,i) - delta_negative_l;
+            u_l(i) = pwm1(1,i) - delta_negative_l;
         else 
 
-            u_l(i) = pwm2(1,i) - delta_positive_l;
+            u_l(i) = pwm1(1,i) - delta_positive_l;
         end
         
-        if pwm2(1,i) > delta_negative_r && pwm2(1,i) < delta_positive_r
+        if pwm1(1,i) > delta_negative_r && pwm1(1,i) < delta_positive_r
             u_r(i) = 0;
-        elseif pwm2(1,i) <= delta_negative_r
+        elseif pwm1(1,i) <= delta_negative_r
 
-            u_r(i) = pwm2(1,i) - delta_negative_r;
+            u_r(i) = pwm1(1,i) - delta_negative_r;
         else 
 
-            u_r(i) = pwm2(1,i) - delta_positive_r;
+            u_r(i) = pwm1(1,i) - delta_positive_r;
         end
     end
     
 
     for i = 1:(size-1)
-
-        
         Y_r(i,1) = w_r(i+1);
         phi_r(i, 1) = w_r(i);
         phi_r(i, 2) = u_r(i+1);
