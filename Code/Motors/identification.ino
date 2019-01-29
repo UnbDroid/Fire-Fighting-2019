@@ -243,7 +243,7 @@ void loop() {
             OnFwdR(pwr);
             OnFwdL(pwr);
             now = millis();
-            if (now - lastIncrement > 15) {
+            if (now - lastIncrement > 20) {
                 if (dir) {
                   Serial.println(" ");
                     pwr = pwr + 1;
@@ -251,7 +251,7 @@ void loop() {
                   Serial.println(" ");
                     pwr = pwr - 1;
                 }
-                if (abs(pwr) >= 100) {
+                if (abs(pwr) >= 30) {
                     dir = !dir;
                 }
                 OnFwdR(pwr);

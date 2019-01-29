@@ -1,13 +1,14 @@
 /*--------------------------- Motor Driver Usage ---------------------------*/
 
 // Motor constants
-#define left_positive_delta 1.0105
-#define left_negative_delta -0.8804
-#define right_positive_delta 1.0802
-#define right_negative_delta -0.7013
+#define left_negative_delta -1.152981118373276
+#define right_negative_delta -0.965522875816994
+#define left_positive_delta 1.035470972702807
+#define right_positive_delta 0.990034602076125
+
 
 // Batery Level
-#define batery_level 15.6
+#define batery_level 15.5
 
 // Step Size
 #define dt 0.02
@@ -53,14 +54,8 @@ byte r_way = FORWARD;        // Right motor's rotation way
 
 // Calculates how many degrees the motor must rotate in order to
 // achieve the distance received as argument
-float Dist2Degrees(float distance) {
-    return (180 * distance) / (PI * WHEEL_RADIUS);
-}
-
-// Calculates how many encoder counts are equivalent to a rotation
-// which meets the degrees received as argument
-long Degrees2Counts(float degrees) {
-    return round((ENC_COUNTS * degrees) / 360);
+float Dist2Counts(float distance) {
+    return (ENC_COUNTS*distance/2*PI*WHEEL_RADIUS);
 }
 
 // The functions below increment or decrement the encoder counts depending on
@@ -68,22 +63,16 @@ long Degrees2Counts(float degrees) {
 
 // For left motor's encoder
 void DoEncoderL() {
-    noInterrupts();
-    if (l_way == FORWARD)
+    if (l_way == FORWARD){
         lenc_pos += 1;
-    else
-        lenc_pos -= 1;
-    interrupts();
+    }else lenc_pos -= 1;
 }
 
 // For right motor's encoder
 void DoEncoderR() {
-    noInterrupts();
-    if (r_way == FORWARD)
+    if (r_way == FORWARD){
         renc_pos += 1;
-    else
-        renc_pos -= 1;
-    interrupts();
+    }else renc_pos -= 1;
 }
 
 // Set the H_Bridge to 11 as to stop the motors
@@ -180,23 +169,26 @@ void PID_Control(float distance){
     float left_pwr_signal,right_pwr_signal;
     float left_AntiWindUpSignal = 0,right_AntiWindUpSignal = 0;
     float left_Integral = 0,right_Integral = 0;
-    float left_derivative,right_derivative, old_left_error, old_right_error;
+    float left_derivative=0,right_derivative=0, old_left_error, old_right_error;
     int initial_time,iteration_time;
-    int relative_error;
+    float relative_error;
 
     // The line below calculates how many encoder counts the motor must rotate
     // to achieve the specified distance
-    volatile long pos = Degrees2Counts(Dist2Degrees(distance));
+    volatile long pos = Dist2Counts(distance);
 
     ResetEncs();
     Serial.println(pos);
-    Serial.println("L_Error L_derivative L_integral L_pwr L_AWU");
-    while(abs(lenc_pos - pos) >= 1 || abs(renc_pos - pos) >= 1){
+    //Serial.println("L_Error L_derivative L_integral L_pwr L_AWU");
+    while(abs(pos - lenc_pos) >=15 && abs(pos - renc_pos) >=15 ){
                 
         initial_time = millis();
 
         // Get the relative error
         relative_error = KE*(lenc_pos - renc_pos);
+
+        Serial.print(relative_error);
+        Serial.print(" ");
 
         // Updates the old error for the derivative calculation
         old_left_error = left_error;
@@ -206,28 +198,28 @@ void PID_Control(float distance){
         left_error = pos - lenc_pos - relative_error;
         right_error= pos - renc_pos + relative_error;
 
-        Serial.print(left_error);
-        Serial.print(" ");
+        //Serial.print(left_error);
+        //Serial.print(" ");
 
         // Calculates the approximate derivative of the error for each motor
         left_derivative = KD_L*(left_error - old_left_error) / dt;
         right_derivative = KD_R*(right_error - old_right_error) / dt;
 
-        Serial.print(left_derivative);
-        Serial.print(" ");
+        //Serial.print(left_derivative);
+        //Serial.print(" ");
 
         // Calculates the approximate integral of the error for each motor
-        left_Integral = (left_Integral + KI_L*left_error + left_AntiWindUpSignal) * dt;
-        right_Integral = (right_Integral + KI_R*right_error+ right_AntiWindUpSignal) * dt;
+        left_Integral = left_Integral + (KI_L*left_error + left_AntiWindUpSignal) * dt;
+        right_Integral = right_Integral + (KI_R*right_error+ right_AntiWindUpSignal) * dt;
 
-        Serial.print(left_Integral);
-        Serial.print(" ");
+        //Serial.print(left_Integral);
+        //Serial.print(" ");
 
         left_pwr_signal = (KP_L*left_error + left_Integral + left_derivative);
         right_pwr_signal= (KP_R*right_error + right_Integral + right_derivative);
 
         Serial.print(left_pwr_signal);
-        Serial.print(" ");
+        Serial.println(" ");
 
         left_AntiWindUpSignal  = -left_pwr_signal;
         right_AntiWindUpSignal = -right_pwr_signal; 
@@ -239,13 +231,15 @@ void PID_Control(float distance){
         right_AntiWindUpSignal = KW*(right_AntiWindUpSignal + right_pwr_signal);
         left_AntiWindUpSignal  = KW*(left_AntiWindUpSignal  + left_pwr_signal );
 
-        Serial.printls(left_AntiWindUpSignal);
+        //Serial.println(left_AntiWindUpSignal);
         //Serial.print(" ");
-        // Serial.print(right_pwr_signal);
-        // Serial.print(" ");
-        // Serial.print(lenc_pos);
-        // Serial.print(" ");
-        // Serial.println(renc_pos);
+        //Serial.print(left_pwr_signal);
+        //Serial.print(" ");
+        //Serial.print(right_pwr_signal);
+        //Serial.print(" ");
+        //Serial.print(lenc_pos);
+        //Serial.print(" ");
+        //Serial.println(renc_pos);
 
         Move_Left_Motor(left_pwr_signal);
         Move_Right_Motor(right_pwr_signal);
@@ -288,8 +282,13 @@ void setup() {
 void loop(){
     Serial.println("Loop Start");
     delay(4000);
-    PID_Control(100);
+    Serial.println("Start +50");
+    PID_Control(10);
     StopMotor(LA_H_BRIDGE, LB_H_BRIDGE);
     StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
-    PID_Control(-100);
+    Serial.println("Start -50");
+    delay(1000);
+    PID_Control(-10);
+    StopMotor(LA_H_BRIDGE, LB_H_BRIDGE);
+    StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
 }
