@@ -1,4 +1,14 @@
-/*--------------------------- Motor Driver Usage ---------------------------*/
+// Code which integrates simple motor functions and gyro usage //
+
+// ----------------------- Libraries ------------------------- //
+
+// Gyro lib
+#include "MPU9250.h"
+
+// ----------------------- Constants ------------------------- //
+
+// Time between gyro updates (millis)
+#define TIME_STEP   20
 
 // Pins used for left motors
 #define LA_H_BRIDGE 34
@@ -25,12 +35,35 @@
 // Constant used when converting a distance in cm to degrees
 #define WHEEL_RADIUS 4
 
+// --------------------- Global Variables -------------------- //
+
+// An MPU9250 object with the MPU-9250 sensor on I2C bus 0 with address 0x68
+MPU9250 gyro(Wire,0x68);
+int status;
+
+// Angular speed variables in each axis
+float radX    = 0;
+float radY    = 0;
+float radZ    = 0;
+
+// Degree variation variables in each axis
+float degreeX = 0; 
+float degreeY = 0;
+float degreeZ = 0;
+
+// Variables used to store time in gyro's angular speed integration
+unsigned long now;
+unsigned long last_update = 0;
+
+// Motor variables
 volatile long lenc_pos  = 0;        // Left encoder's position
 volatile long renc_pos  = 0;        // Right encoder's position
 byte          l_way     = FORWARD;  // Left motor's rotation way
 byte          r_way     = FORWARD;  // Right motor's rotation way
-byte          l_pot     = 127;      // Left motor's power
-byte          r_pot     = 127;      // Right motor's power
+byte          l_pot     = 90;       // Left motor's power
+byte          r_pot     = 90;       // Right motor's power
+
+// ------------------------ Functions ------------------------ //
 
 // Calculates how many degrees the motor must rotate in order to
 // achieve the distance received as argument
@@ -154,6 +187,46 @@ void WalkCm(float distance, byte way) {
   StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
 }
 
+// Gets gyro's raw readings (rad/s) and integrates them into angles.
+// Angles are also converted from rad to degrees.
+void UpdateGyro() {
+  gyro.readSensor();
+  degreeZ += (gyro.getGyroZ_rads() * TIME_STEP * 180) / (1000 * PI);
+}
+
+// Makes the robot rotate in its own axis the certain amount of
+// degrees received as an argument. Rotation direction is controlled
+// by the argument's sign.
+void Turn(float degrees) {
+  float offset = degreeZ;
+
+  if (degrees > 0) {
+    OnRevL();
+    OnFwdR();
+    while(degreeZ < (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        UpdateGyro();
+        last_update = now;
+      }
+    }
+
+  } else {
+    OnRevR();
+    OnFwdL();
+    while(degreeZ > (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        UpdateGyro();
+        last_update = now;
+      }
+    }
+  }
+
+  StopMotor(LA_H_BRIDGE, LB_H_BRIDGE);
+  StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
+}
+
 // Encoders' setup function
 void StartEncoders() {
   // Left encoder
@@ -176,16 +249,23 @@ void StartDriver() {
   pinMode(RMOT_PWM, OUTPUT);
 }
 
+// Gyro setup function
+void StartGyro() {
+  status = gyro.begin();
+  if (status < 0)
+    Serial.println("gyro initialization unsuccessful");
+}
+
 void setup() {
   StartDriver();
   StartEncoders();
+  StartGyro();
   Serial.begin(9600);
 }
 
 void loop() {
-  //delay(5000);
-  WalkCm(30, FORWARD);
-  delay(2000);
-  WalkCm(30, BACKWARDS);
-  delay(2000);
+  delay(1000);
+  Turn(90);
+  delay(1000);
+  Turn(-90);
 }
