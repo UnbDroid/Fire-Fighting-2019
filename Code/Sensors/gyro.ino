@@ -1,45 +1,70 @@
+/*------------------------------------------ Gyroscope Functions ---------------------------------------------*/
+
+// Comments:
+// Here we have the Turn function and the angular position calculation.
+
+// Usage:
+// To read the current angular position just call UpdateGyro, beware that this function shouldn't be called 
+// more than once in 20 milli seconds since it time step is 20.
+// The Turn function receives the angle disired. Positive turns right and negative turns left.
+
+// Gyro lib
 #include "MPU9250.h"
 
-// Time between gyro updates
-#define TIME_STEP 0.01
+// Iteration step in milli seconds
+#define TIME_STEP 20
+
+// Set the turning speed 
+#define Turn_Tension 3
 
 // An MPU9250 object with the MPU-9250 sensor on I2C bus 0 with address 0x68
 MPU9250 IMU(Wire,0x68);
 int status;
+float radZ = 0;
 
-float radX    = 0;
-float radY    = 0;
-float radZ    = 0;
-float degreeX = 0; 
-float degreeY = 0;
-float degreeZ = 0;
+void Turn(float degrees) {
+  
+  static long now;
+  static long last_update = 0;
 
-unsigned long timer;
+  float offset = degreeZ;
+  
+  if (degrees > 0) {
+    Move_Right_Motor(-Turn_Tension);
+    Move_Left_Motor(Turn_Tension);
+    while(degreeZ < (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        UpdateGyro();
+        last_update = now;
+      }
+    }
 
-// Converts angles from rads to degrees
-void GyroRad2Degree() {
-  //degreeX = (radX * 180) / PI;
-  //degreeY = (radY * 180) / PI;
-  degreeZ = (radZ * 180) / PI;
+  } else {
+    Move_Right_Motor(Turn_Tension);
+    Move_Left_Motor(-Turn_Tension);
+    while(degreeZ > (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        UpdateGyro();
+        last_update = now;
+      }
+    }
+  }
+  StopMotors();
 }
 
 // Gets gyro's raw readings (rad/s) and integrates them into angles (rad).
 // Angles are also converted from rad to degrees. 
 void UpdateGyro() {
-  timer = millis();
-
-  IMU.readSensor();
-  //radX = IMU.getGyroX_rads();
-  //radY = IMU.getGyroY_rads();
-  radZ += IMU.getGyroZ_rads() * TIME_STEP;
-
-  GyroRad2Degree();
-  delay((TIME_STEP * 1000)- (millis() - timer));
+  gyro.readSensor();
+  degreeZ += (gyro.getGyroZ_rads() * TIME_STEP * 180) / (1000 * PI);
 }
+
 
 // Gyro setup function
 void StartGyro() {
-  status = IMU.begin();
+  status = gyro.begin();
   if (status < 0)
     Serial.println("IMU initialization unsuccessful");
 }
@@ -51,8 +76,16 @@ void setup() {
 }
 
 void loop() {
-  UpdateGyro();
-  Serial.print("Z = ");
-  Serial.println(degreeZ);
-  delay(100);
+
+  int now,last_update = 0;
+
+  while(1){
+    now = millis();
+    if(now - last_update > 20){
+      UpdateGyro();
+      Serial.print("Z = ");
+      Serial.println(degreeZ);
+      last_update = now;
+    }
+  }
 }
