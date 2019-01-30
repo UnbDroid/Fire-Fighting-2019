@@ -1,5 +1,11 @@
 /*--------------------------- Motor Speed Control Functions Usage ---------------------------*/
 
+// Gyro lib
+#include "MPU9250.h"
+
+// Time between gyro updates (millis)
+#define TIME_STEP 20
+
 // Batery Level (important to be the real value)
 #define batery_level 15.5 // The best way to do this is to set a pin to read the actual value from the battery
 
@@ -39,6 +45,17 @@
 
 // Constant used when converting a distance in cm to degrees
 #define WHEEL_RADIUS 4
+
+// An MPU9250 object with the MPU-9250 sensor on I2C bus 0 with address 0x68
+MPU9250 gyro(Wire,0x68);
+int status;
+
+// Degree variation variables in each axis
+float degreeZ = 0;
+
+// Variables used to store time in gyro's angular speed integration
+unsigned long now;
+unsigned long last_update = 0;
 
 volatile long lenc_pos = 0;  // Left encoder's position
 volatile long renc_pos = 0;  // Right encoder's position
@@ -130,24 +147,24 @@ void Move_Right_Motor(int tension) {
     analogWrite(RMOT_PWM, (byte)round(pwm));
 }
 
-void Inverse_Function(float *left_pwr_signal,float *right_pwr_signal){
+// void Inverse_Function(float *left_pwr_signal,float *right_pwr_signal){
     
-    if(*left_pwr_signal != 0){
-        if(*left_pwr_signal > 0){
-            *left_pwr_signal+= left_positive_delta;
-        }else{
-            *left_pwr_signal+= left_negative_delta;
-        }
-    }
+//     if(*left_pwr_signal != 0){
+//         if(*left_pwr_signal > 0){
+//             *left_pwr_signal+= left_positive_delta;
+//         }else{
+//             *left_pwr_signal+= left_negative_delta;
+//         }
+//     }
 
-    if(*right_pwr_signal != 0){
-        if(*right_pwr_signal > 0){
-            *right_pwr_signal+= right_positive_delta;
-        }else{
-            *right_pwr_signal+= right_negative_delta;
-        }
-    }
-}
+//     if(*right_pwr_signal != 0){
+//         if(*right_pwr_signal > 0){
+//             *right_pwr_signal+= right_positive_delta;
+//         }else{
+//             *right_pwr_signal+= right_negative_delta;
+//         }
+//     }
+// }
 
 void Saturation_Detector(float *left_pwr_signal, float *right_pwr_signal){
     
@@ -227,9 +244,9 @@ void PI_Speed_Control(float speed,int distancia){
             lastupdate = now;
             update_vel(dt);
 
-            Serial.print(left_speed);
-            Serial.print(" ");
-            Serial.println(right_speed);
+            // Serial.print(left_speed);
+            // Serial.print(" ");
+            // Serial.println(right_speed);
             
             left_error = speed - left_speed - relative_error;
             right_error = speed - right_speed + relative_error;
@@ -259,8 +276,54 @@ void PI_Speed_Control(float speed,int distancia){
 
             Move_Left_Motor(left_pwr_signal);
             Move_Right_Motor(right_pwr_signal);
+            UpdateGyro();
+            Serial.print("ângulo: ");
+            Serial.println(degreeZ);
         }
     }
+}
+
+// Gets gyro's raw readings (rad/s) and integrates them into angles (rad).
+// Angles are also converted from rad to degrees. 
+void UpdateGyro() {
+  gyro.readSensor();
+  degreeZ += (gyro.getGyroZ_rads() * TIME_STEP * 180) / (1000 * PI);
+}
+
+void Turn(float degrees) {
+  float offset = degreeZ;
+
+  if (degrees > 0) {
+    Move_Right_Motor(5);
+    Move_Left_Motor(-5);
+    while(degreeZ < (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        UpdateGyro();
+        last_update = now;
+      }
+    }
+
+  } else {
+    Move_Right_Motor(-5);
+    Move_Left_Motor(5);
+    while(degreeZ > (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        UpdateGyro();
+        last_update = now;
+      }
+    }
+  }
+
+  StopMotors();
+}
+
+// Gyro setup function
+void StartGyro() {
+  status = gyro.begin();
+  if (status < 0)
+    Serial.println("IMU initialization unsuccessful");
 }
 
 // Encoders' setup function
@@ -288,16 +351,13 @@ void StartDriver() {
 void setup() {
     StartDriver();
     StartEncoders();
+    StartGyro();
     Serial.begin(9600);
 }
 
 void loop(){
     delay(2000);
     PI_Speed_Control(460,50);
-    StopMotor(LA_H_BRIDGE, LB_H_BRIDGE);
-    StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
-    delay(2000);
-    PI_Speed_Control(-460,-50);
-    StopMotor(LA_H_BRIDGE, LB_H_BRIDGE);
-    StopMotor(RA_H_BRIDGE, RB_H_BRIDGE);
+    StopMotors();
+    delay(20000);
 }
