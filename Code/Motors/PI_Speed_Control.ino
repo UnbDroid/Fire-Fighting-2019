@@ -1,13 +1,7 @@
-/*--------------------------- Motor Driver Usage ---------------------------*/
+/*--------------------------- Motor Speed Control Functions Usage ---------------------------*/
 
-// Motor constants
-#define left_negative_delta -1.152981118373276
-#define right_negative_delta -0.965522875816994
-#define left_positive_delta 1.035470972702807
-#define right_positive_delta 0.990034602076125
-
-// Batery Level
-#define batery_level 15.5
+// Batery Level (important to be the real value)
+#define batery_level 15.5 // The best way to do this is to set a pin to read the actual value from the battery
 
 // Saturation Value
 #define saturation_value 14.4
@@ -64,28 +58,26 @@ float Dist2Counts(float distance) {
 
 // For left motor's encoder
 void DoEncoderL() {
-    noInterrupts();
     if (l_way == FORWARD)
         lenc_pos += 1;
     else
         lenc_pos -= 1;
-    interrupts();
 }
 
 // For right motor's encoder
 void DoEncoderR() {
-    noInterrupts();
     if (r_way == FORWARD)
         renc_pos += 1;
     else
         renc_pos -= 1;
-    interrupts();
 }
 
-// Set the H_Bridge to 11 as to stop the motors
-void StopMotor(byte A_H_BRIDGE, byte B_H_BRIDGE) {
-    digitalWrite(A_H_BRIDGE, HIGH);
-    digitalWrite(B_H_BRIDGE, HIGH);
+// Set the both motor H_Bridge to 11 as to stop them
+void StopMotors() {
+    digitalWrite(LA_H_BRIDGE, HIGH);
+    digitalWrite(LB_H_BRIDGE, HIGH);
+    digitalWrite(RA_H_BRIDGE, HIGH);
+    digitalWrite(RB_H_BRIDGE, HIGH);
 }
 
 // Resets encoders' position variable. Called before using these variables in
@@ -177,7 +169,7 @@ void update_vel(float dt){
     static long left_old_enc = 0,right_old_enc = 0, left_old_speed = 0, right_old_speed = 0;
     long left_aux,right_aux;
     long local_lenc, local_renc;
-    float alpha = 0.8;
+    float alpha = 0.85;
 
     local_lenc = lenc_pos;
     local_renc = renc_pos;
@@ -191,20 +183,6 @@ void update_vel(float dt){
     right_old_enc = local_renc;
 }
 
-// void AntiWindUp(float *left_integral,float *right_integral,float *left_pwr_signal, float *right_pwr_signal,float left_error,float right_error){
-    
-//     if(*left_pwr_signal > saturation_value || *left_pwr_signal < -saturation_value){
-//         *left_integral = 0;
-//         *left_pwr_signal = KP_L*left_error;
-//     }
-//     if(*right_pwr_signal > saturation_value || *right_pwr_signal < -saturation_value){
-//         *right_integral = 0;
-//         *right_pwr_signal = KP_R*right_error;
-//     }
-    
-// }
-
-//Solução porca ;(
 void AntiWindUp(float *left_integral,float *right_integral){
 
     if(*left_integral > 260){
@@ -228,16 +206,19 @@ void PI_Speed_Control(float speed,int distancia){
     float left_integral = 0,right_integral = 0;
     long now, lastupdate = 0;
     float dt,pos;
-    
+    int initial_position;
+
     ResetSpeed();
-    ResetEncs();
+
+    initial_position = abs((lenc_pos + renc_pos)/2);
 
     pos = Dist2Counts(distancia);
+
     Serial.print(pos);
     Serial.print(" ");
     Serial.println(speed);
 
-    while(abs(lenc_pos) < abs(pos)){
+    while(abs(initial_position - abs((lenc_pos+renc_pos)/2)) < abs(pos)){
         
         now = micros();
         dt = now - lastupdate;
@@ -249,8 +230,6 @@ void PI_Speed_Control(float speed,int distancia){
             Serial.print(left_speed);
             Serial.print(" ");
             Serial.println(right_speed);
-
-            //relative_error = KE*( left_speed - right_speed);
             
             left_error = speed - left_speed - relative_error;
             right_error = speed - right_speed + relative_error;
@@ -267,8 +246,6 @@ void PI_Speed_Control(float speed,int distancia){
 
             left_pwr_signal = KP_L*left_error + KI_L*left_integral;
             right_pwr_signal = KP_R*right_error + KI_R*right_integral;
-
-            //AntiWindUp(&left_integral,&right_integral,&left_pwr_signal,&right_pwr_signal,left_error,right_error);
 
             //Serial.print(left_integral);
             //Serial.print(" ");
