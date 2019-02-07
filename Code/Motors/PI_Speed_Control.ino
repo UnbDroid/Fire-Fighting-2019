@@ -23,7 +23,7 @@
 
 // PI Constants
 #define KP 0.0125
-#define KP 0.0125
+#define KI 0.015
 #define KG 50
 
 // Pins used for left motors
