@@ -37,8 +37,8 @@
 #define RMOT_PWM 9
 
 // Pins used for encoders
-#define L_ENC 2  // Left motor's encoder
-#define R_ENC 3  // Right motor's encoder
+#define L_ENC 18  // Left motor's encoder
+#define R_ENC 19  // Right motor's encoder
 
 // Encoder constants
 #define ENC_COUNTS 560  // Encoder counts equivalent to 1 full rotation
