@@ -18,14 +18,14 @@
 #define Turn_Tension 3
 
 // An MPU9250 object with the MPU-9250 sensor on I2C bus 0 with address 0x68
-MPU9250 IMU(Wire,0x68);
+MPU9250 gyro(Wire,0x68);
 int status;
-float radZ = 0;
+float degreeZ = 0;
 
 void Turn(float degrees) {
   
-  static long now;
-  static long last_update = 0;
+  static unsigned long now;
+  static unsigned long last_update = 0;
 
   float offset = degreeZ;
   
@@ -77,7 +77,7 @@ void setup() {
 
 void loop() {
 
-  int now,last_update = 0;
+  unsigned long now,last_update = 0;
 
   while(1){
     now = millis();
