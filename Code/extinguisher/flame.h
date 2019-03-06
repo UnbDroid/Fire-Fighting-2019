@@ -1,6 +1,15 @@
 #ifndef FLAME_H
 #define FLAME_H
 
+class Pump {
+private:
+  int pin;
+
+public:
+  Pump(int _pin);
+  void on();
+  void off();
+};
 
 class FlameSensor {
 private: 

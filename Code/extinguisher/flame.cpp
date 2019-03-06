@@ -1,5 +1,18 @@
 #include "flame.h"
 
+Pump::Pump(int _pin) {
+  pin = _pin;
+  pinMode(pin, OUTPUT);
+}
+
+void Pump::on() {
+  digitalWrite(pin, HIGH);
+}
+
+void Pump::off() {
+  digitalWrite(pin, LOW);
+}
+
 FlameSensor::FlameSensor(int _pin_analog, int _pin_digital){
   pin_analog = _pin_analog;
   pin_digital = _pin_digital;
