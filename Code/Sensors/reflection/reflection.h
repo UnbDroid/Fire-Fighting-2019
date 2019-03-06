@@ -3,26 +3,30 @@
 
 #include "Arduino.h"
 
-// Constants for the colors
-#define BLACK true
-#define WHITE false
-
 // Class created to represent the reflection sensor
 class Reflection {
 private:
-    // Number of samples used when filtering the sensor
-    const static int SAMPLE_NUM = 5;
+  // Number of samples used when filtering the sensor
+  const static int SAMPLE_NUM = 5;
 
-    int     pin;    // digital input pin
-    bool    color;  // saves the last color read after filtering
+  int     pin;    // digital input pin
+  bool    color;  // saves the last color read after filtering
 
-    // Private method used in update()
-    void sort (bool *sample);
+  // Private method used in update() to sort an array of samples
+  void sort (bool *sample);
 public:
-    // Public methods for creating and using the sensor object
-    Reflection(int _pin);
-    void update();
-    bool getColor();
+  // Constants for the colors
+  const static bool BLACK = true;
+  const static bool WHITE = false;
+
+  // Constructor method. Receives the digital input pin number
+  Reflection(int _pin);
+
+  // Reads the sensor and updates the last color seen
+  void update();
+
+  // Returns the last color seen by the sensor
+  bool getColor();
 };
 
 #endif // REFLECTION_H_
