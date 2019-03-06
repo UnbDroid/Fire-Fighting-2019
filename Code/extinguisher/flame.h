@@ -34,7 +34,11 @@ private:
 
 public:
 
-  const static int FIRE 75 // 75 and bellow are the analog values for when the sensor is facing the flame 
+  const static int FIRE            75 // 75 and bellow are the analog values for when the sensor is facing the flame 
+  const static int SERVO_START     90
+  const static int SERVO_LEFT_MAX  135
+  const static int SERVO_RIGHT_MAX 45
+
   void findFire();
   void movesServo();
   int searchFlame();
