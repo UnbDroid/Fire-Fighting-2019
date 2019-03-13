@@ -21,9 +21,12 @@ private:
   int pin_digital;
   int fire_analog = 1024;
   int fire_digital = 0;
+  const static int SAMPLE_NUM = 5;
+  
 
 public:
   FlameSensor(int _pin_analog, int _pin_digital);
+  void sort(int *sample);
   void update();
   int getAnalog();
   int getDigital();

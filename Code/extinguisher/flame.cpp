@@ -21,14 +21,42 @@ FlameSensor::FlameSensor(int _pin_analog, int _pin_digital){
   pinMode(pin_digital, INPUT);
 }
 
+void FlameSensor::sort (int *sample) {
+    int k, j;
+    int aux;
+
+    for (k = 1; k < SAMPLE_NUM; k++) {
+        for (j = 0; j < SAMPLE_NUM - 1; j++) {
+            if (sample[j] > sample[j + 1]) {
+                aux          = sample[j];
+                sample[j]     = sample[j + 1];
+                sample[j + 1] = aux;
+            }
+        }
+    }
+}
+
 void FlameSensor::update() { // Reads the flame sensor and updates the fire variables 
-  //Fazer função para pegar a mediana!!!!
-  fire_analog  = analogRead(pin_analog);
-  fire_digital = digitalRead(pin_digital);
+  int sample_analog[SAMPLE_NUM]; // array of samples
+  int sample_digital[SAMPLE_NUM];
+
+    // Fills the array
+  for(int i = 0; i < SAMPLE_NUM; i++){
+     sample_analog[i] = analogRead(pin_analog);
+      sample_digital[i] = digitalRead(pin_digital);
+  }
+
+  sort(sample_analog);
+  sort(sample_digital);
+
+  // Takes the median of all samples and updates the last color
+  fire_analog = sample_analog[(SAMPLE_NUM + 1)/2];
+  fire_digital = sample_digital[(SAMPLE_NUM + 1)/2];
+
   Serial.print("Porta analogica: ");
-  Serial.print(fire_analog);
-  Serial.print(" Porta digital: ");
-  Serial.print(fire_digital);
+  Serial.println(fire_analog);
+  //Serial.print(" Porta digital: ");
+  //Serial.println(fire_digital);
 }
 
 int FlameSensor::getAnalog() {
