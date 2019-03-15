@@ -1,0 +1,198 @@
+#include "controller.h"
+
+Motor::Motor(int _a_pin, int _b_pin, int _pwm_pin) {
+  a_pin   = _a_pin;
+  b_pin   = _b_pin;
+  pwm_pin = _pwm_pin;
+
+  pinMode(a_pin, OUTPUT);
+  pinMode(b_pin, OUTPUT);
+  pinMode(pwm_pin, OUTPUT);
+}
+
+bool Motor::getDirection() {
+  return direction;
+}
+
+long Motor::getEncoder() {
+  return encoder;
+}
+
+void Motor::sumEncoder() {
+  encoder++;
+}
+
+void Motor::move(int voltage) {
+  int pwm;
+
+  pwm = voltage*255/BATTERY_LEVEL;
+
+  if (pwm >= 0) {
+    direction = FORWARD;
+    digitalWrite(a_pin, HIGH);
+    digitalWrite(b_pin, LOW);
+  } else {
+    pwm = -pwm;
+    direction = BACKWARDS;
+    digitalWrite(a_pin, LOW);
+    digitalWrite(b_pin, HIGH);
+  }
+  analogWrite(pwm_pin, (byte)round(pwm));
+}
+
+void Motor::stop() {
+  digitalWrite(a_pin, HIGH);
+  digitalWrite(b_pin, HIGH);
+}
+
+float Controller::dist2Counts(float distance) {
+  return ((ENC_COUNTS*distance)/(2*PI*WHEEL_RADIUS));
+}
+
+void Controller::resetSpeed() {
+  left_speed  = 0;
+  right_speed = 0;
+}
+
+void Controller::saturationDetector(float *left_pwr_signal, float *right_pwr_signal) {
+  if(*left_pwr_signal > saturation_value){    
+    *left_pwr_signal = saturation_value;
+  }else if(*left_pwr_signal < -saturation_value){
+    *left_pwr_signal = -saturation_value;
+  }
+
+  if(*right_pwr_signal > saturation_value){    
+    *right_pwr_signal = saturation_value;
+  }else if(*right_pwr_signal < -saturation_value){
+    *right_pwr_signal = -saturation_value;
+  }
+}
+
+void Controller::updateSpeed(float dt) {
+  long left_aux,right_aux;
+  long local_lenc, local_renc;
+  float alpha = 0.9;
+
+  local_lenc = lenc_pos;
+  local_renc = renc_pos;
+
+  left_speed = alpha*((local_lenc - left_old_enc)/dt) + (1 - alpha)*(left_old_speed);
+  right_speed = alpha*((local_renc - right_old_enc)/dt) + (1 - alpha)*(right_old_speed);
+  
+  left_old_speed = left_speed;
+  right_old_speed = right_speed;
+  left_old_enc = local_lenc;
+  right_old_enc = local_renc;
+}
+
+void Controller::antiWindUp(float *left_integral,float *right_integral) {
+  // Ver com o Saman o que é esse 260
+  
+  if(*left_integral > 260){
+    *left_integral = 260;
+  }else if(*left_integral < -260){
+    *left_integral = -260;
+  }
+  
+  if(*right_integral > 260){
+    *right_integral = 260;
+  }else if(*right_integral < -260){
+    *right_integral = -260;
+  }
+}
+
+void Controller::updateGyro() {
+  gyro->readSensor();
+  degreeZ += (gyro->getGyroZ_rads() * TIME_STEP * 180) / (1000 * PI);
+}
+
+void Controller::move(float speed, int distance) {
+  float left_pwr_signal,right_pwr_signal;
+  float relative_error = 0,right_error,left_error;
+  float left_integral = 0,right_integral = 0;
+  long  now, lastupdate = 0;
+  float dt,pos;
+  int   initial_position;
+  float initial_degree = degreeZ;
+
+  resetSpeed();
+
+  initial_position = abs((left_motor->getEncoder() + right_motor->getEncoder())/2);
+
+  pos = dist2Counts(distance);
+
+  while(abs(initial_position - abs((left_motor->getEncoder() + right_motor->getEncoder())/2)) < abs(pos)){
+      
+    now = millis();
+    dt = now - lastupdate;
+
+    if(dt > TIME_STEP) {
+      dt = dt/1000;
+      lastupdate = now;
+      updateSpeed(dt);
+    
+      relative_error = KG*(degreeZ - initial_degree);
+
+      left_error = speed - left_speed - relative_error;
+      right_error = speed - right_speed + relative_error;
+            
+      left_integral = left_integral + left_error * dt; 
+      right_integral = right_integral + right_error * dt;     
+
+      antiWindUp(&left_integral, &right_integral);
+
+      left_pwr_signal = KP*left_error + KI*left_integral;
+      right_pwr_signal = KP*right_error + KI*right_integral;
+
+      saturationDetector(&left_pwr_signal, &right_pwr_signal);
+
+      left_motor->move(left_pwr_signal);
+      right_motor->move(-right_pwr_signal);
+      updateGyro();
+    }
+  }
+}
+
+void Controller::stop() {
+  left_motor->stop();
+  right_motor->stop();
+  left_motor->stop();
+  right_motor->stop();
+  left_motor->stop();
+  right_motor->stop();
+}
+
+void Controller::turn(float degrees) {
+  static unsigned long now;
+  static unsigned long last_update = 0;
+
+  float offset = degreeZ;
+  
+  if (degrees > 0) {
+    right_motor->move(Turn_Tension);
+    left_motor->move(Turn_Tension);
+    while(degreeZ < (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        updateGyro();
+        last_update = now;
+      }
+    }
+
+  } else {
+    right_motor->move(-Turn_Tension);
+    left_motor->move(-Turn_Tension);
+    while(degreeZ > (offset + degrees)){
+      now = millis();
+      if (now - last_update >= TIME_STEP) {
+        updateGyro();
+        last_update = now;
+      }
+    }
+  }
+  stop();
+}
+
+void begin() {
+  gyro->begin();
+}
