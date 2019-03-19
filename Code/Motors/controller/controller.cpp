@@ -1,5 +1,9 @@
 #include "controller.h"
 
+const float  Motor::BATTERY_LEVEL = 15.1;
+const bool   Motor::FORWARD       = true;
+const bool   Motor::BACKWARDS     = false;
+
 Motor::Motor(int _a_pin, int _b_pin, int _pwm_pin) {
   a_pin   = _a_pin;
   b_pin   = _b_pin;
@@ -20,6 +24,10 @@ long Motor::getEncoder() {
 
 void Motor::sumEncoder() {
   encoder++;
+}
+
+void Motor::subEncoder() {
+  encoder--;
 }
 
 void Motor::move(int voltage) {
@@ -45,6 +53,21 @@ void Motor::stop() {
   digitalWrite(b_pin, HIGH);
 }
 
+const double Controller::SATURATION_VALUE  = 14.4;
+const double Controller::KP                = 0.0125;
+const double Controller::KI                = 0.015;
+const double Controller::KG                = 50;
+const int    Controller::TIME_STEP         = 20;
+const int    Controller::ENC_COUNTS        = 560;
+const int    Controller::WHEEL_RADIUS      = 4;
+const int    Controller::TURN_TENSION      = 3;
+      long   Controller::left_old_enc      = 0;
+      long   Controller::right_old_enc     = 0;
+      long   Controller::left_old_speed    = 0;
+      long   Controller::right_old_speed   = 0;
+      long   Controller::left_speed        = 0;
+      long   Controller::right_speed       = 0;
+
 float Controller::dist2Counts(float distance) {
   return ((ENC_COUNTS*distance)/(2*PI*WHEEL_RADIUS));
 }
@@ -55,16 +78,16 @@ void Controller::resetSpeed() {
 }
 
 void Controller::saturationDetector(float *left_pwr_signal, float *right_pwr_signal) {
-  if(*left_pwr_signal > saturation_value){    
-    *left_pwr_signal = saturation_value;
-  }else if(*left_pwr_signal < -saturation_value){
-    *left_pwr_signal = -saturation_value;
+  if(*left_pwr_signal > SATURATION_VALUE){    
+    *left_pwr_signal = SATURATION_VALUE;
+  }else if(*left_pwr_signal < -SATURATION_VALUE){
+    *left_pwr_signal = -SATURATION_VALUE;
   }
 
-  if(*right_pwr_signal > saturation_value){    
-    *right_pwr_signal = saturation_value;
-  }else if(*right_pwr_signal < -saturation_value){
-    *right_pwr_signal = -saturation_value;
+  if(*right_pwr_signal > SATURATION_VALUE){    
+    *right_pwr_signal = SATURATION_VALUE;
+  }else if(*right_pwr_signal < -SATURATION_VALUE){
+    *right_pwr_signal = -SATURATION_VALUE;
   }
 }
 
@@ -73,8 +96,8 @@ void Controller::updateSpeed(float dt) {
   long local_lenc, local_renc;
   float alpha = 0.9;
 
-  local_lenc = lenc_pos;
-  local_renc = renc_pos;
+  local_lenc = left_motor->getEncoder();
+  local_renc = right_motor->getEncoder();
 
   left_speed = alpha*((local_lenc - left_old_enc)/dt) + (1 - alpha)*(left_old_speed);
   right_speed = alpha*((local_renc - right_old_enc)/dt) + (1 - alpha)*(right_old_speed);
@@ -162,16 +185,16 @@ void Controller::stop() {
   right_motor->stop();
 }
 
-void Controller::turn(float degrees) {
+void Controller::turn(float angle) {
   static unsigned long now;
   static unsigned long last_update = 0;
 
   float offset = degreeZ;
   
-  if (degrees > 0) {
-    right_motor->move(Turn_Tension);
-    left_motor->move(Turn_Tension);
-    while(degreeZ < (offset + degrees)){
+  if (angle > 0) {
+    right_motor->move(TURN_TENSION);
+    left_motor->move(TURN_TENSION);
+    while(degreeZ < (offset + angle)){
       now = millis();
       if (now - last_update >= TIME_STEP) {
         updateGyro();
@@ -180,9 +203,9 @@ void Controller::turn(float degrees) {
     }
 
   } else {
-    right_motor->move(-Turn_Tension);
-    left_motor->move(-Turn_Tension);
-    while(degreeZ > (offset + degrees)){
+    right_motor->move(-TURN_TENSION);
+    left_motor->move(-TURN_TENSION);
+    while(degreeZ > (offset + angle)){
       now = millis();
       if (now - last_update >= TIME_STEP) {
         updateGyro();
@@ -193,6 +216,6 @@ void Controller::turn(float degrees) {
   stop();
 }
 
-void begin() {
+void Controller::begin() {
   gyro->begin();
 }

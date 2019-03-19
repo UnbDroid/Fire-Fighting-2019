@@ -2,7 +2,8 @@
 #define CONTROLLER_H_
 
 // Gyro lib
-#include "../Sensors/MPU9250/MPU9250.h"
+#include "Arduino.h"
+#include "MPU9250.h"
 
 class Motor {
 private:
@@ -13,14 +14,15 @@ private:
   volatile long encoder;
 
 public:
-  const static float  BATTERY_LEVEL = 15.1;
-  const static bool   FORWARD       = true;
-  const static bool   BACKWARDS     = false;
+  const static float  BATTERY_LEVEL;
+  const static bool   FORWARD;
+  const static bool   BACKWARDS;
 
   Motor(int _a_pin, int _b_pin, int _pwm_pin);
   bool getDirection();
   long getEncoder();
   void sumEncoder();
+  void subEncoder();
   void move(int voltage);
   void stop();
 };
@@ -28,32 +30,35 @@ public:
 class Controller {
 private:
   // Saturation Value
-  const static double SATURATION_VALUE = 14.4;
+  const static double SATURATION_VALUE;
   
   // PI Constants
-  const static double KP = 0.0125;
-  const static double KI = 0.015;
-  const static double KG = 50;
+  const static double KP;
+  const static double KI;
+  const static double KG;
 
   // Iteration step in milli seconds
-  const static int TIME_STEP = 20;
+  const static int TIME_STEP;
   
   // Encoder counts equivalent to 1 full rotation
-  const static int ENC_COUNTS = 560;
+  const static int ENC_COUNTS;
 
   // Constant used when converting a distance in cm to degrees
-  const static int WHEEL_RADIUS = 4;
+  const static int WHEEL_RADIUS;
 
-  static long left_old_enc    = 0;
-  static long right_old_enc   = 0;
-  static long left_old_speed  = 0;
-  static long right_old_speed = 0;
-  static long left_speed      = 0;   // Left motor speed
-  static long right_speed     = 0;   // Right motor speed
+  // Set the turning speed 
+  const static int TURN_TENSION;
+
+  static long left_old_enc;
+  static long right_old_enc;
+  static long left_old_speed;
+  static long right_old_speed;
+  static long left_speed;   // Left motor speed
+  static long right_speed;   // Right motor speed
 
   float degreeZ = 0;
 
-  MPU9250 * gyro = new MPU9250(Wire,0x68);
+  MPU9250 * gyro = new MPU9250(Wire, 0x68);
 
   float dist2Counts(float distance);
   void  resetSpeed();
@@ -66,10 +71,10 @@ public:
   Motor * left_motor  = new Motor(32, 34, 9);
   Motor * right_motor = new Motor(39, 40, 8);
 
-  void move(float speed,int distance);
+  void move(float speed, int distance);
   void stop();
-  void turn(float degrees);
-  void begin();
+  void turn(float angle);
+  void Controller::begin();
 };
 
 #endif // CONTROLLER_H_

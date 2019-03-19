@@ -65,55 +65,11 @@ class MPU9250{
       LP_ACCEL_ODR_500HZ = 11
     };
     MPU9250(TwoWire &bus,uint8_t address);
-    MPU9250(SPIClass &bus,uint8_t csPin);
     int begin();
-    int setAccelRange(AccelRange range);
-    int setGyroRange(GyroRange range);
-    int setDlpfBandwidth(DlpfBandwidth bandwidth);
-    int setSrd(uint8_t srd);
-    int enableDataReadyInterrupt();
-    int disableDataReadyInterrupt();
-    int enableWakeOnMotion(float womThresh_mg,LpAccelOdr odr);
     int readSensor();
-    float getAccelX_mss();
-    float getAccelY_mss();
-    float getAccelZ_mss();
-    float getGyroX_rads();
-    float getGyroY_rads();
     float getGyroZ_rads();
-    float getMagX_uT();
-    float getMagY_uT();
-    float getMagZ_uT();
-    float getTemperature_C();
     
-    int calibrateGyro();
-    float getGyroBiasX_rads();
-    float getGyroBiasY_rads();
-    float getGyroBiasZ_rads();
-    void setGyroBiasX_rads(float bias);
-    void setGyroBiasY_rads(float bias);
-    void setGyroBiasZ_rads(float bias);
-    int calibrateAccel();
-    float getAccelBiasX_mss();
-    float getAccelScaleFactorX();
-    float getAccelBiasY_mss();
-    float getAccelScaleFactorY();
-    float getAccelBiasZ_mss();
-    float getAccelScaleFactorZ();
-    void setAccelCalX(float bias,float scaleFactor);
-    void setAccelCalY(float bias,float scaleFactor);
-    void setAccelCalZ(float bias,float scaleFactor);
-    int calibrateMag();
-    float getMagBiasX_uT();
-    float getMagScaleFactorX();
-    float getMagBiasY_uT();
-    float getMagScaleFactorY();
-    float getMagBiasZ_uT();
-    float getMagScaleFactorZ();
-    void setMagCalX(float bias,float scaleFactor);
-    void setMagCalY(float bias,float scaleFactor);
-    void setMagCalZ(float bias,float scaleFactor);
-  protected:
+    protected:
     // i2c
     uint8_t _address;
     TwoWire *_i2c;
@@ -273,35 +229,6 @@ class MPU9250{
     int readAK8963Registers(uint8_t subAddress, uint8_t count, uint8_t* dest);
     int whoAmI();
     int whoAmIAK8963();
-};
-
-class MPU9250FIFO: public MPU9250 {
-  public:
-    using MPU9250::MPU9250;
-    int enableFifo(bool accel,bool gyro,bool mag,bool temp);
-    int readFifo();
-    void getFifoAccelX_mss(size_t *size,float* data);
-    void getFifoAccelY_mss(size_t *size,float* data);
-    void getFifoAccelZ_mss(size_t *size,float* data);
-    void getFifoGyroX_rads(size_t *size,float* data);
-    void getFifoGyroY_rads(size_t *size,float* data);
-    void getFifoGyroZ_rads(size_t *size,float* data);
-    void getFifoMagX_uT(size_t *size,float* data);
-    void getFifoMagY_uT(size_t *size,float* data);
-    void getFifoMagZ_uT(size_t *size,float* data);
-    void getFifoTemperature_C(size_t *size,float* data);
-  protected:
-    // fifo
-    bool _enFifoAccel,_enFifoGyro,_enFifoMag,_enFifoTemp;
-    size_t _fifoSize,_fifoFrameSize;
-    float _axFifo[85], _ayFifo[85], _azFifo[85];
-    size_t _aSize;
-    float _gxFifo[85], _gyFifo[85], _gzFifo[85];
-    size_t _gSize;
-    float _hxFifo[73], _hyFifo[73], _hzFifo[73];
-    size_t _hSize;
-    float _tFifo[256];
-    size_t _tSize;
 };
 
 #endif
