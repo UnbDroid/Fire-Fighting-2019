@@ -3,6 +3,8 @@
 const float  Motor::BATTERY_LEVEL = 15.1;
 const bool   Motor::FORWARD       = true;
 const bool   Motor::BACKWARDS     = false;
+const bool   Motor::LEFT          = true;
+const bool   Motor::RIGHT         = false;
 
 Motor::Motor(int _a_pin, int _b_pin, int _pwm_pin) {
   a_pin   = _a_pin;
@@ -30,18 +32,24 @@ void Motor::subEncoder() {
   encoder--;
 }
 
-void Motor::move(int voltage) {
+void Motor::move(int voltage, bool side) {
   int pwm;
 
   pwm = voltage*255/BATTERY_LEVEL;
 
   if (pwm >= 0) {
-    direction = FORWARD;
+    if(side == LEFT)
+      direction = FORWARD;
+    else
+      direction = BACKWARDS;
     digitalWrite(a_pin, HIGH);
     digitalWrite(b_pin, LOW);
   } else {
     pwm = -pwm;
-    direction = BACKWARDS;
+    if(side == RIGHT)
+      direction = FORWARD;
+    else
+      direction = BACKWARDS;
     digitalWrite(a_pin, LOW);
     digitalWrite(b_pin, HIGH);
   }
@@ -130,6 +138,7 @@ void Controller::updateGyro() {
 }
 
 void Controller::move(float speed, int distance) {
+  Serial.println("entrei");
   float left_pwr_signal,right_pwr_signal;
   float relative_error = 0,right_error,left_error;
   float left_integral = 0,right_integral = 0;
@@ -169,8 +178,12 @@ void Controller::move(float speed, int distance) {
 
       saturationDetector(&left_pwr_signal, &right_pwr_signal);
 
-      left_motor->move(left_pwr_signal);
-      right_motor->move(-right_pwr_signal);
+      Serial.println(right_pwr_signal);
+      Serial.println(left_pwr_signal);
+      left_motor->move(left_pwr_signal, Motor::LEFT);
+      
+      right_motor->move(right_pwr_signal, Motor::RIGHT);
+      
       updateGyro();
     }
   }
@@ -192,8 +205,8 @@ void Controller::turn(float angle) {
   float offset = degreeZ;
   
   if (angle > 0) {
-    right_motor->move(TURN_TENSION);
-    left_motor->move(TURN_TENSION);
+    right_motor->move(TURN_TENSION, Motor::RIGHT);
+    left_motor->move(TURN_TENSION, Motor::LEFT);
     while(degreeZ < (offset + angle)){
       now = millis();
       if (now - last_update >= TIME_STEP) {
@@ -203,8 +216,8 @@ void Controller::turn(float angle) {
     }
 
   } else {
-    right_motor->move(-TURN_TENSION);
-    left_motor->move(-TURN_TENSION);
+    right_motor->move(-TURN_TENSION, Motor::RIGHT);
+    left_motor->move(-TURN_TENSION, Motor::LEFT);
     while(degreeZ > (offset + angle)){
       now = millis();
       if (now - last_update >= TIME_STEP) {

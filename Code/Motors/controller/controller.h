@@ -17,13 +17,15 @@ public:
   const static float  BATTERY_LEVEL;
   const static bool   FORWARD;
   const static bool   BACKWARDS;
+  const static bool   LEFT;
+  const static bool   RIGHT;
 
   Motor(int _a_pin, int _b_pin, int _pwm_pin);
   bool getDirection();
   long getEncoder();
   void sumEncoder();
   void subEncoder();
-  void move(int voltage);
+  void move(int voltage, bool side);
   void stop();
 };
 

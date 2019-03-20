@@ -29,11 +29,13 @@ void startEncoders() {
 }
 
 void setup() {
-    controller.begin();
-    startEncoders();
+  controller.begin();
+  startEncoders();
+  Serial.begin(115200);
 }
 
 void loop() {
+  Serial.print("oi");
   controller.move(300, 25);
   controller.stop();
   controller.turn(90);
