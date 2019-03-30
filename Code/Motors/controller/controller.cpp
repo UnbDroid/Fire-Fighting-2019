@@ -40,13 +40,13 @@ void Motor::move(int voltage, bool side) {
   if (pwm >= 0) {
     if(side == LEFT)
       direction = FORWARD;
-    else
+    else 
       direction = BACKWARDS;
     digitalWrite(a_pin, HIGH);
     digitalWrite(b_pin, LOW);
   } else {
     pwm = -pwm;
-    if(side == RIGHT)
+    if(side == RIGHT) 
       direction = FORWARD;
     else
       direction = BACKWARDS;
@@ -63,12 +63,12 @@ void Motor::stop() {
 
 const double Controller::SATURATION_VALUE  = 14.4;
 const double Controller::KP                = 0.0125;
-const double Controller::KI                = 0.015;
-const double Controller::KG                = 50;
+const double Controller::KI                = 0;
+const double Controller::KG                = 0;
 const int    Controller::TIME_STEP         = 20;
 const int    Controller::ENC_COUNTS        = 560;
 const int    Controller::WHEEL_RADIUS      = 4;
-const int    Controller::TURN_TENSION      = 3;
+const int    Controller::TURN_TENSION      = 8;
       long   Controller::left_old_enc      = 0;
       long   Controller::right_old_enc     = 0;
       long   Controller::left_old_speed    = 0;
@@ -138,7 +138,6 @@ void Controller::updateGyro() {
 }
 
 void Controller::move(float speed, int distance) {
-  Serial.println("entrei");
   float left_pwr_signal,right_pwr_signal;
   float relative_error = 0,right_error,left_error;
   float left_integral = 0,right_integral = 0;
@@ -147,7 +146,7 @@ void Controller::move(float speed, int distance) {
   int   initial_position;
   float initial_degree = degreeZ;
 
-  resetSpeed();
+  this->resetSpeed();
 
   initial_position = abs((left_motor->getEncoder() + right_motor->getEncoder())/2);
 
@@ -161,7 +160,7 @@ void Controller::move(float speed, int distance) {
     if(dt > TIME_STEP) {
       dt = dt/1000;
       lastupdate = now;
-      updateSpeed(dt);
+      this->updateSpeed(dt);
     
       relative_error = KG*(degreeZ - initial_degree);
 
@@ -171,20 +170,21 @@ void Controller::move(float speed, int distance) {
       left_integral = left_integral + left_error * dt; 
       right_integral = right_integral + right_error * dt;     
 
-      antiWindUp(&left_integral, &right_integral);
+      this->antiWindUp(&left_integral, &right_integral);
 
       left_pwr_signal = KP*left_error + KI*left_integral;
       right_pwr_signal = KP*right_error + KI*right_integral;
 
-      saturationDetector(&left_pwr_signal, &right_pwr_signal);
+      this->saturationDetector(&left_pwr_signal, &right_pwr_signal);
 
-      Serial.println(right_pwr_signal);
-      Serial.println(left_pwr_signal);
       left_motor->move(left_pwr_signal, Motor::LEFT);
+      right_motor->move(-right_pwr_signal, Motor::RIGHT);
       
-      right_motor->move(right_pwr_signal, Motor::RIGHT);
-      
-      updateGyro();
+      this->updateGyro();
+      Serial.print("left: ");
+      Serial.println(left_speed);
+      Serial.print("right: ");
+      Serial.println(right_speed);
     }
   }
 }

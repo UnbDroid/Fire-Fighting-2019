@@ -35,11 +35,10 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("oi");
-  controller.move(300, 25);
+  controller.move(300, 60);
   controller.stop();
-  controller.turn(90);
-  controller.move(300, -25);
+  // controller.turn(180);
+  controller.move(-300, 60);
   controller.stop();
-  controller.turn(-90);
+  // controller.turn(-180);
 }

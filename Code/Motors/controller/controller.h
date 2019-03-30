@@ -10,8 +10,8 @@ private:
   int   a_pin;
   int   b_pin;
   int   pwm_pin;
-  bool  direction;
-  volatile long encoder;
+  bool  direction = FORWARD;
+  volatile long encoder = 0;
 
 public:
   const static float  BATTERY_LEVEL;
@@ -71,7 +71,7 @@ private:
 
 public:
   Motor * left_motor  = new Motor(32, 34, 9);
-  Motor * right_motor = new Motor(39, 40, 8);
+  Motor * right_motor = new Motor(38, 40, 8);
 
   void move(float speed, int distance);
   void stop();
