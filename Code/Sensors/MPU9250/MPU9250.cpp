@@ -27,6 +27,190 @@ MPU9250::MPU9250(TwoWire &bus,uint8_t address){
   _useSPI = false; // set to use I2C
 }
 
+/* estimates the gyro biases */
+int MPU9250::calibrateGyro() {
+  // set the range, bandwidth, and srd
+  if (setGyroRange(GYRO_RANGE_250DPS) < 0) {
+    return -1;
+  }
+  if (setDlpfBandwidth(DLPF_BANDWIDTH_20HZ) < 0) {
+    return -2;
+  }
+  if (setSrd(19) < 0) {
+    return -3;
+  }
+
+  // take samples and find bias
+  _gzbD = 0;
+  for (size_t i=0; i < _numSamples; i++) {
+    readSensor();
+    _gzbD += (getGyroZ_rads() + _gzb)/((double)_numSamples);
+    delay(20);
+  }
+  _gzb = (float)_gzbD;
+
+  // set the range, bandwidth, and srd back to what they were
+  if (setGyroRange(_gyroRange) < 0) {
+    return -4;
+  }
+  if (setDlpfBandwidth(_bandwidth) < 0) {
+    return -5;
+  }
+  if (setSrd(_srd) < 0) {
+    return -6;
+  }
+  return 1;
+}
+
+/* sets the sample rate divider to values other than default */
+int MPU9250::setSrd(uint8_t srd) {
+  // use low speed SPI for register setting
+  _useSPIHS = false;
+  /* setting the sample rate divider to 19 to facilitate setting up magnetometer */
+  if(writeRegister(SMPDIV,19) < 0){ // setting the sample rate divider
+    return -1;
+  }
+  if(srd > 9){
+    // set AK8963 to Power Down
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
+      return -2;
+    }
+    delay(100); // long wait between AK8963 mode changes  
+    // set AK8963 to 16 bit resolution, 8 Hz update rate
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS1) < 0){
+      return -3;
+    }
+    delay(100); // long wait between AK8963 mode changes     
+    // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+    readAK8963Registers(AK8963_HXL,7,_buffer);
+  } else {
+    // set AK8963 to Power Down
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
+      return -2;
+    }
+    delay(100); // long wait between AK8963 mode changes  
+    // set AK8963 to 16 bit resolution, 100 Hz update rate
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) < 0){
+      return -3;
+    }
+    delay(100); // long wait between AK8963 mode changes     
+    // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+    readAK8963Registers(AK8963_HXL,7,_buffer);    
+  } 
+  /* setting the sample rate divider */
+  if(writeRegister(SMPDIV,srd) < 0){ // setting the sample rate divider
+    return -4;
+  } 
+  _srd = srd;
+  return 1; 
+}
+
+/* sets the gyro full scale range to values other than default */
+int MPU9250::setGyroRange(GyroRange range) {
+  // use low speed SPI for register setting
+  _useSPIHS = false;
+  switch(range) {
+    case GYRO_RANGE_250DPS: {
+      // setting the gyro range to 250DPS
+      if(writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS) < 0){
+        return -1;
+      }
+      _gyroScale = 250.0f/32767.5f * _d2r; // setting the gyro scale to 250DPS
+      break;
+    }
+    case GYRO_RANGE_500DPS: {
+      // setting the gyro range to 500DPS
+      if(writeRegister(GYRO_CONFIG,GYRO_FS_SEL_500DPS) < 0){
+        return -1;
+      }
+      _gyroScale = 500.0f/32767.5f * _d2r; // setting the gyro scale to 500DPS
+      break;  
+    }
+    case GYRO_RANGE_1000DPS: {
+      // setting the gyro range to 1000DPS
+      if(writeRegister(GYRO_CONFIG,GYRO_FS_SEL_1000DPS) < 0){
+        return -1;
+      }
+      _gyroScale = 1000.0f/32767.5f * _d2r; // setting the gyro scale to 1000DPS
+      break;
+    }
+    case GYRO_RANGE_2000DPS: {
+      // setting the gyro range to 2000DPS
+      if(writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS) < 0){
+        return -1;
+      }
+      _gyroScale = 2000.0f/32767.5f * _d2r; // setting the gyro scale to 2000DPS
+      break;
+    }
+  }
+  _gyroRange = range;
+  return 1;
+}
+
+/* sets the DLPF bandwidth to values other than default */
+int MPU9250::setDlpfBandwidth(DlpfBandwidth bandwidth) {
+  // use low speed SPI for register setting
+  _useSPIHS = false;
+  switch(bandwidth) {
+    case DLPF_BANDWIDTH_184HZ: {
+      if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_184) < 0){ // setting accel bandwidth to 184Hz
+        return -1;
+      } 
+      if(writeRegister(CONFIG,GYRO_DLPF_184) < 0){ // setting gyro bandwidth to 184Hz
+        return -2;
+      }
+      break;
+    }
+    case DLPF_BANDWIDTH_92HZ: {
+      if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_92) < 0){ // setting accel bandwidth to 92Hz
+        return -1;
+      } 
+      if(writeRegister(CONFIG,GYRO_DLPF_92) < 0){ // setting gyro bandwidth to 92Hz
+        return -2;
+      }
+      break;
+    }
+    case DLPF_BANDWIDTH_41HZ: {
+      if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_41) < 0){ // setting accel bandwidth to 41Hz
+        return -1;
+      } 
+      if(writeRegister(CONFIG,GYRO_DLPF_41) < 0){ // setting gyro bandwidth to 41Hz
+        return -2;
+      }
+      break;
+    }
+    case DLPF_BANDWIDTH_20HZ: {
+      if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_20) < 0){ // setting accel bandwidth to 20Hz
+        return -1;
+      } 
+      if(writeRegister(CONFIG,GYRO_DLPF_20) < 0){ // setting gyro bandwidth to 20Hz
+        return -2;
+      }
+      break;
+    }
+    case DLPF_BANDWIDTH_10HZ: {
+      if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_10) < 0){ // setting accel bandwidth to 10Hz
+        return -1;
+      } 
+      if(writeRegister(CONFIG,GYRO_DLPF_10) < 0){ // setting gyro bandwidth to 10Hz
+        return -2;
+      }
+      break;
+    }
+    case DLPF_BANDWIDTH_5HZ: {
+      if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_5) < 0){ // setting accel bandwidth to 5Hz
+        return -1;
+      } 
+      if(writeRegister(CONFIG,GYRO_DLPF_5) < 0){ // setting gyro bandwidth to 5Hz
+        return -2;
+      }
+      break;
+    }
+  }
+  _bandwidth = bandwidth;
+  return 1;
+}
+
 /* starts communication with the MPU-9250 */
 int MPU9250::begin(){
   if( _useSPI ) { // using SPI for communication

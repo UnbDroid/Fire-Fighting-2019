@@ -66,8 +66,12 @@ class MPU9250{
     };
     MPU9250(TwoWire &bus,uint8_t address);
     int begin();
+    int setGyroRange(GyroRange range);
+    int setDlpfBandwidth(DlpfBandwidth bandwidth);
+    int setSrd(uint8_t srd);
     int readSensor();
     float getGyroZ_rads();
+    int calibrateGyro();
     
     protected:
     // i2c
