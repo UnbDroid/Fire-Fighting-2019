@@ -14,6 +14,10 @@
 // US lib
 #include <NewPing.h>
 
+// Frontal US pins
+#define FRONTAL_TRIG      49
+#define FRONTAL_ECHO      39
+
 // Left US pins 
 #define LEFT_FRONT_TRIG   51
 #define LEFT_FRONT_ECHO   41
@@ -26,7 +30,7 @@
 #define RIGHT_BACK_TRIG   45
 #define RIGHT_BACK_ECHO   35
 
-#define MAX_DIST 200	// Distance reading functions return 0 if the read value is greater than this one
+#define MAX_DIST 200  // Distance reading functions return 0 if the read value is greater than this one
 
 // Batery Level (important to be the real value)
 #define BATTERY_LEVEL 15.1 // The best way to do this is to set a pin to read the actual value from the battery
@@ -69,6 +73,7 @@
 // Constant used when converting a distance in cm to degrees
 #define WHEEL_RADIUS 4
 
+NewPing frontal_us(FRONTAL_TRIG, FRONTAL_ECHO, MAX_DIST);
 NewPing left_front_us(LEFT_FRONT_TRIG, LEFT_FRONT_ECHO, MAX_DIST);
 NewPing left_back_us(LEFT_BACK_TRIG, LEFT_BACK_ECHO, MAX_DIST);
 NewPing right_front_us(RIGHT_FRONT_TRIG, RIGHT_FRONT_ECHO, MAX_DIST);
@@ -338,6 +343,9 @@ void startDriver() {
   pinMode(RMOT_PWM, OUTPUT);
 }
 
+unsigned int frontalUS() {
+  return frontal_us.convert_cm(frontal_us.ping_median(10)); 
+}
 unsigned int leftFrontUS() {
   return left_front_us.convert_cm(left_front_us.ping_median(10)); 
 }
@@ -366,14 +374,23 @@ void setup() {
 }
 
 void loop(){
+  Serial.print(leftBackUS());
+  Serial.print("  ");
+  Serial.print(leftFrontUS());
+  Serial.print("  ");
+  Serial.print(rightFrontUS());
+  Serial.print("  ");
+  Serial.println(rightBackUS());
+  Serial.print("  ");
+  Serial.println(frontalUS());
   // moveDistance(700,60);
   // stopMotors();
   // delay(100000);
-  turn(90.5);
-  Serial.println(degreeZ);
-  delay(1000);
-  turn(-90.5);
-  Serial.println(degreeZ);
+  // turn(90.5);
+  // Serial.println(degreeZ);
+  // delay(1000);
+  // turn(-90.5);
+  // Serial.println(degreeZ);
   // delay(1000);
   // decideStartSide();
   // delay(1000000);
