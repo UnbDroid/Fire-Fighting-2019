@@ -33,7 +33,7 @@
 #define MAX_DIST 200  // Distance reading functions return 0 if the read value is greater than this one
 
 // Batery Level (important to be the real value)
-#define BATTERY_LEVEL 15.1 // The best way to do this is to set a pin to read the actual value from the battery
+#define BATTERY_LEVEL 14.8 // The best way to do this is to set a pin to read the actual value from the battery
 
 // Saturation Value
 #define SATURATION_VALUE 14.4
@@ -273,6 +273,7 @@ void moveDistance(float speed,int distance){
       updateGyro();
     }
   }
+  stopMotors();
 }
 
 void turn(float angle) {
@@ -359,21 +360,7 @@ unsigned int rightBackUS() {
   return right_back_us.convert_cm(right_back_us.ping_median(10)); 
 }
 
-void decideStartSide() {
-  if(rightBackUS() <= 13 && leftFrontUS() > 13){
-    turn(-90);
-    turn(1.5*(leftBackUS()-leftFrontUS()));
-  }
-}
-
-void setup() {
-  startDriver();
-  startEncoders();
-  startGyro();
-  Serial.begin(9600);
-}
-
-void loop(){
+void printUS() {
   Serial.print(leftBackUS());
   Serial.print("  ");
   Serial.print(leftFrontUS());
@@ -383,19 +370,28 @@ void loop(){
   Serial.println(rightBackUS());
   Serial.print("  ");
   Serial.println(frontalUS());
-  // moveDistance(700,60);
-  // stopMotors();
-  // delay(100000);
-  // turn(90.5);
-  // Serial.println(degreeZ);
-  // delay(1000);
-  // turn(-90.5);
-  // Serial.println(degreeZ);
-  // delay(1000);
-  // decideStartSide();
-  // delay(1000000);
-  // Serial.print("left: ");
-  // Serial.println(leftFrontUS());
-  // Serial.print("right: ");
-  // Serial.println(rightFrontUS());
+}
+
+// void decideStartSide() {
+//   if(rightBackUS() <= 13 && leftFrontUS() > 13){
+    
+//   }
+// }
+
+void setup() {
+  startDriver();
+  startEncoders();
+  startGyro();
+  Serial.begin(9600);
+}
+
+void loop(){
+  moveDistance(450,30);
+  delay(1000);
+  turn(90);
+  delay(1000);
+  turn(-90);
+  delay(1000);
+  moveDistance(450,-30);
+  delay(1000);
 }
