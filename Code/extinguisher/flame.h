@@ -30,6 +30,7 @@ public:
   void update();
   int getAnalog();
   int getDigital();
+  void printFlame();
 };
 
 class Extinguisher {

@@ -67,6 +67,11 @@ int FlameSensor::getDigital() {
   return this->fire_digital;
 }
 
+void FlameSensor::printFlame() {
+  this->update();
+  Serial.println(this->getAnalog());
+}
+
 void Extinguisher::findFire(){ // Checks if there is a fire and does the average of the servo position to know where the flame is
   //int lastfire_analog = fire_analog;
   sensor->update();

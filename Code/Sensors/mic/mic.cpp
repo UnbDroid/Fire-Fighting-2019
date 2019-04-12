@@ -1,13 +1,12 @@
-#include "reflection.h"
+#include "mic.h"
 
-// Constructor method. Already sets the pin mode
-Reflection::Reflection(int _pin) {
-    pin = _pin;
-    pinMode(pin, INPUT);
+Mic::Mic(int _pin) {
+  pin = _pin;
+  pinMode(pin, INPUT);
 }
 
 // Bubble sort algorythm used to sort the array of samples
-void Reflection::sort (bool *sample) {
+void Mic::sort (bool *sample) {
     int k, j;
     bool aux;
 
@@ -23,7 +22,7 @@ void Reflection::sort (bool *sample) {
 }
 
 // Reads the sensor and updates the last seen color. Filters by median.
-void Reflection::update() {
+void Mic::update() {
     bool sample[SAMPLE_NUM]; // array of samples
 
     // Fills the array
@@ -33,16 +32,20 @@ void Reflection::update() {
     sort(sample);
 
     // Takes the median of all samples and updates the last color
-    color = sample[(SAMPLE_NUM + 1)/2];
+    status = sample[(SAMPLE_NUM + 1)/2];
 }
 
-// Returns the last seen color
-bool Reflection::getColor() {
-    return this->color;
+bool Mic::getStatus() {
+  return status;
 }
 
-// Prints sensor reading in serial monitor
-void Reflection::printColor() {
+void Mic::start() {
+  while(status != ACTIVE)
     this->update();
-    Serial.println(this->getColor());
+  led->on();
+}
+
+void Mic::printStatus() {
+  this->update();
+  Serial.println(status);
 }

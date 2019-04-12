@@ -9,10 +9,10 @@ private:
   // Number of samples used when filtering the sensor
   const static int SAMPLE_NUM = 5;
 
-  int     pin;    // digital input pin
-  bool    color;  // saves the last color read after filtering
+  int   pin;    // digital input pin
+  bool  color;  // saves the last color read after filtering
 
-  // Private method used in update() to sort an array of samples
+  // Method used in update() to sort an array of samples
   void sort (bool *sample);
 public:
   // Constants for the colors
@@ -27,6 +27,9 @@ public:
 
   // Returns the last color seen by the sensor
   bool getColor();
+
+  // Prints reflection sensor reading
+  void printColor();
 };
 
 #endif // REFLECTION_H_
