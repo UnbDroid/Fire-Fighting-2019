@@ -37,9 +37,7 @@ class Extinguisher {
 private:
 
 	int servo_position;
-  int fire_position = 0;
   int count_fire;
-  bool fire_exist = false;
 
   Pump * pump = new Pump(38);
   Servo servo;
@@ -47,6 +45,7 @@ private:
 
   void findFire();
   void moveServo(int from_position, int to_position);
+  void moveServoSearchingFlame(int from_position, int to_position);
 
 public:
 
@@ -54,8 +53,15 @@ public:
   const static int SERVO_START     = 90;
   const static int SERVO_LEFT_MAX  = 135;
   const static int SERVO_RIGHT_MAX = 45;
+  const static int LEFT_SIDE       = 1;
+  const static int RIGHT_SIDE      = -1;
+  const static int LITTLE_SEARCH   = 10;
+  const static int SPREAD_DEGREES  = 10;
 
-  int searchFlame();
+  bool fire_exist = false;
+  int fire_position = 0;
+
+  void searchFlame(int room_side);
   void extinguishFire();
 
 };

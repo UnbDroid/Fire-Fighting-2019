@@ -97,37 +97,52 @@ void Extinguisher::moveServo(int from_position, int to_position) { // Moves serv
   }
 }
 
-int Extinguisher::searchFlame() { // Goes to one extrem to another looking for fire
+void Extinguisher::moveServoSearchingFlame(int from_position, int to_position) {
+  
+  if ((from_position < to_position) && (to_position <= SERVO_LEFT_MAX)) {
+    for(servo_position = from_position; servo_position <= to_position; servo_position++) {
+      servo.write(servo_position);
+      findFire();
+      delay(40);
+    }
+  } else if (to_position >= SERVO_RIGHT_MAX) {
+    for(servo_position = from_position; servo_position >= to_position; servo_position--) {
+      servo.write(servo_position);
+      findFire();
+      delay(40);
+    }
+  }
+
+}
+
+void Extinguisher::searchFlame(int room_side) { // Goes to one extrem to another looking for fire
 
   count_fire = 0;
   fire_position = 0;
-  for(servo_position = SERVO_START; servo_position <= SERVO_LEFT_MAX; servo_position++) {  // Moves servo slowly to left while looks for fire
-    servo.write(servo_position);
-    findFire();
-    delay(40);
+
+  if (room_side == LEFT_SIDE){
+    moveServoSearchingFlame(SERVO_START, SERVO_START + LITTLE_SEARCH);
+    moveServoSearchingFlame(SERVO_START + LITTLE_SEARCH, SERVO_LEFT_MAX);
+    moveServoSearchingFlame(SERVO_LEFT_MAX, SERVO_START);
   }
-  
-  for(servo_position = SERVO_LEFT_MAX; servo_position >= SERVO_RIGHT_MAX; servo_position--) {  // Moves servo slowly to right while looks for fire
-      servo.write(servo_position);
-      findFire();
-      delay(40);
+
+  if (room_side == RIGHT_SIDE){
+    moveServoSearchingFlame(SERVO_START, SERVO_START - LITTLE_SEARCH);
+    moveServoSearchingFlame(SERVO_START - LITTLE_SEARCH, SERVO_RIGHT_MAX);
+    moveServoSearchingFlame(SERVO_RIGHT_MAX, SERVO_START);
   }
-  for(servo_position = SERVO_RIGHT_MAX; servo_position <= SERVO_START; servo_position++) { // Moves servo slowly to center while looks for fire
-      servo.write(servo_position);
-      findFire();
-      delay(40);
-  }
+
   if (fire_exist){
     fire_position = fire_position/count_fire;  //Does the average of the positions where it saw fire
   }
 }
 
 void Extinguisher::extinguishFire() {   // Turns servo to where the flame is and right and left to extinguish when the pump is turned on
-  moveServo(SERVO_START, fire_position);
-  //Turn on the pump
-  for (int i = 0; i <= 5; i++){
-    moveServo(fire_position, fire_position + 10);
-    moveServo(fire_position + 10, fire_position - 10);
-    moveServo(fire_position - 10, fire_position);
-  }
+  
+  pump->on();
+  moveServo(SERVO_START, SERVO_START + SPREAD_DEGREES);
+  moveServo(SERVO_START + SPREAD_DEGREES, SERVO_START - SPREAD_DEGREES);
+  moveServo(SERVO_START - SPREAD_DEGREES, SERVO_START);
+  pump->off();
+  
 }

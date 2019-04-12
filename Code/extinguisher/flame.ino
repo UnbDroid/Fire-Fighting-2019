@@ -8,7 +8,6 @@ void setup() {
 
 void loop(){
     Serial.println("Start!");
-    extinguisher.searchFlame();
     Serial.println("End!");
     delay(5000);
 }
