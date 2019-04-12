@@ -1,68 +1,13 @@
-// Trinity College Fire-Fighting Home Robot Contest
+3// Trinity College Fire-Fighting Home Robot Contest
 // Equipe DROID - University of Brasília, Brasília - DF, Brazil
 // Authors: Daniel Bauchspiess, Gabriel Gonçalves, Lucas Faria, Pedro Saman, Rebeca Helen, Vanessa Rodrigues
 
 // This is the main source code for the robot Atrasadinho. It contains the routines and functions responsible for arena navigation and candle extinguishing. All source code can be found and downloaded on https://github.com/UnbDroid/Fire-Fighting-2019/Code
 
-// --------------------------------------------- Ultrasonic Sensors ---------------------------------------------- //
+// ------------------------------------------------ Macro Logic -------------------------------------------------- //
 
-// US lib
-#include "NewPing.h"
-
-// US functions return 0 if they read more than 200 cm
-#define MAX_DIST 200  
-
-// === Frontal US === //
-#define FRONTAL_TRIG      49
-#define FRONTAL_ECHO      39
-NewPing frontal_us(FRONTAL_TRIG, FRONTAL_ECHO, MAX_DIST);
-unsigned int frontalUS();  // Takes 5 sensor readings and returns the median of the distances 
-
-// === Left US' === //
-#define LEFT_FRONT_TRIG   51
-#define LEFT_FRONT_ECHO   41
-NewPing left_front_us(LEFT_FRONT_TRIG, LEFT_FRONT_ECHO, MAX_DIST);
-unsigned int leftFrontUS(); // Takes 5 sensor readings and returns the median of the distances
-
-#define LEFT_BACK_TRIG    53
-#define LEFT_BACK_ECHO    43
-NewPing left_back_us(LEFT_BACK_TRIG, LEFT_BACK_ECHO, MAX_DIST);
-unsigned int leftBackUS(); // Takes 5 sensor readings and returns the median of the distances
-
-// === Right US' === //
-#define RIGHT_FRONT_TRIG  47
-#define RIGHT_FRONT_ECHO  37
-NewPing right_front_us(RIGHT_FRONT_TRIG, RIGHT_FRONT_ECHO, MAX_DIST);
-unsigned int rightFrontUS(); // Takes 5 sensor readings and returns the median of the distances
-
-#define RIGHT_BACK_TRIG   45
-#define RIGHT_BACK_ECHO   35
-NewPing right_back_us(RIGHT_BACK_TRIG, RIGHT_BACK_ECHO, MAX_DIST);
-unsigned int rightBackUS(); // Takes 5 sensor readings and returns the median of the distances
-
-// Prints all US readings on Serial Monitor. Order: frontal, leftFront, leftBack, rightFront, rightBack
-void printUS();
-
-// -------------------------------------------------- Gyroscope -------------------------------------------------- //
-
-// Gyro lib
-#include "MPU9250.h"
-
-// Iteration step in milli seconds. Used when integrating gyro's angular position
-#define TIME_STEP 20
-
-// An MPU9250 object with the MPU-9250 sensor on I2C bus 0 with address 0x68
-MPU9250 gyro(Wire,0x68);
-int status;
-
-// Degree variation in Z axis
-float degreeZ = 0;
-
-// Reads gyro's angular speed in Z axis and integrates it to get the robot's current angle variation
-void updateGyro();
-
-// Gyro beginning function. Checks if initialization went correctly
-void startGyro();
+#define ROOM3 3
+#define ROOM4 4
 
 // --------------------------------------------------- Motors ---------------------------------------------------- //
 
@@ -98,6 +43,9 @@ void startGyro();
 volatile long lenc_pos = 0; // encoder's position
 long left_speed = 0;        // motor speed
 byte l_way = FORWARD;       // motor's rotation direction
+float left_pwr_signal;
+float left_integral = 0;
+float left_error;
 void doEncoderL();                  // increments or decrements encoder position. Called by interruption
 void moveLeftMotor(float tension);  // sends received voltage to the motor. positive is forward, negative backwards
 
@@ -109,13 +57,23 @@ void moveLeftMotor(float tension);  // sends received voltage to the motor. posi
 volatile long renc_pos = 0; // encoder's position
 long right_speed = 0;       // motor speed
 byte r_way = FORWARD;       // motor's rotation direction
+float right_pwr_signal;
+float right_integral = 0;
+float right_error;
 void doEncoderR();                  // increments or decrements encoder position. Called by interruption
 void moveRightMotor(float tension); // sends received voltage to the motor. positive is forward, negative backwards
+
+float relative_error = 0;
+long now, last_update = 0;
+float dt;
+float initial_degree;
 
 // === General functions === //
 
 // Encoders' setup function
 void startEncoders();
+
+
 
 // Motor driver setup function
 void startDriver();
@@ -148,7 +106,13 @@ void moveDistance(float speed,int distance);
 // Makes the robot turn left if angle is negative, right if angle is negative
 void turn(float angle);
 
+// ---------------------------------------------------- Mic ------------------------------------------------------ //
+
+#define MIC     0
+#define MIC_LED 1
+
 // --------------------------------------------------------------------------------------------------------------- //
+
 
 // Calculates how many degrees the motor must rotate in order to achieve the distance received as argument
 float dist2Counts(float distance) {
@@ -285,13 +249,8 @@ void antiWindUp(float *left_integral,float *right_integral) {
 
 void moveDistance(float speed,int distance) {
     
-  float left_pwr_signal,right_pwr_signal;
-  float relative_error = 0,right_error,left_error;
-  float left_integral = 0,right_integral = 0;
-  long now, lastupdate = 0;
-  float dt,pos;
+  float pos;
   int initial_position;
-  float initial_degree = degreeZ;
 
   resetSpeed();
 
@@ -302,11 +261,11 @@ void moveDistance(float speed,int distance) {
   while(abs(initial_position - abs((lenc_pos+renc_pos)/2)) < abs(pos)){
       
     now = millis();
-    dt = now - lastupdate;
+    dt = now - last_update;
 
     if(dt > TIME_STEP){
       dt = dt/1000;
-      lastupdate = now;
+      last_update = now;
       updateSpeed(dt);
     
       relative_error = KG*(degreeZ - initial_degree);
@@ -428,26 +387,102 @@ void printUS() {
   Serial.println(rightBackUS());  
 }
 
-// void decideStartSide() {
-//   if(rightBackUS() <= 13 && leftFrontUS() > 13){
+void readMic() {
+  while(digitalRead(MIC) != HIGH);
+  digitalWrite(MIC_LED, HIGH);
+}
+
+int startSide() {
+  if(rightFrontUS() < 15 && rightBackUS() < 15)
+    return ROOM3;
+  return ROOM4;
+}
+
+
+void xablau() {
+  while(US == Parede)
+    move()
+  while(US != Parede)
+    move()
+  calculaDistancia()
+  daRe()
+  turn()
+}
+
+void resetController(){
+  left_speed = 0;
+  right_speed = 0;
+  relative_error = 0;
+  left_integral = 0;
+  right_integral = 0;
+  last_update = 0;
+  initial_degree = degreeZ;
+  lenc_pos = 0;
+  renc_pos = 0;
+}
+
+void moveUS(float speed) {
     
-//   }
-// }
+  float left_pwr_signal,right_pwr_signal;
+  float relative_error = 0,right_error,left_error;
+  float left_integral = 0,right_integral = 0;
+  long now, last_update = 0;
+  float dt,pos;
+  int initial_position;
+  float initial_degree = degreeZ;
+
+  resetSpeed();
+
+  initial_position = abs((lenc_pos + renc_pos)/2);
+
+  pos = dist2Counts(distance);
+
+  while(abs(initial_position - abs((lenc_pos+renc_pos)/2)) < abs(pos)){
+      
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP){
+      dt = dt/1000;
+      last_update = now;
+      updateSpeed(dt);
+    
+      relative_error = KG*(degreeZ - initial_degree);
+
+      left_error = speed - left_speed - relative_error;
+      right_error = speed - right_speed + relative_error;
+            
+      left_integral = left_integral + left_error * dt; 
+      right_integral = right_integral + right_error * dt;     
+
+      antiWindUp(&left_integral,&right_integral);
+
+      left_pwr_signal = KP*left_error + KI*left_integral;
+      right_pwr_signal = KP*right_error + KI*right_integral;
+
+      saturationDetector(&left_pwr_signal,&right_pwr_signal);
+
+      moveLeftMotor(left_pwr_signal);
+      moveRightMotor(right_pwr_signal);
+      updateGyro();
+    }
+  }
+  stopMotors();
+}
+
+void startToMiddle() {
+
+}
 
 void setup() {
   startDriver();
   startEncoders();
   startGyro();
   Serial.begin(9600);
+  readMic();
 }
 
 void loop(){
-  moveDistance(450,30);
-  delay(1000);
-  turn(90);
-  delay(1000);
-  turn(-90);
-  delay(1000);
-  moveDistance(450,-30);
-  delay(1000);
+  if(startSide() == ROOM3)
+    startToRoom3();
 }
