@@ -103,6 +103,25 @@ float dist2Counts(float distance) {
   return ((ENC_COUNTS*distance)/(2*PI*WHEEL_RADIUS));
 }
 
+// Calculates which distance was travelled by the robot when the encoders mark the received amount of counts
+float counts2Dist(float counts) {
+  return ((2*PI*WHEEL_RADIUS*ENC_COUNTS)/counts);
+}
+
+void stopLeftMotor() {
+  digitalWrite(LA_H_BRIDGE, HIGH);
+  digitalWrite(LB_H_BRIDGE, HIGH);
+  digitalWrite(LA_H_BRIDGE, HIGH);
+  digitalWrite(LB_H_BRIDGE, HIGH);
+}
+
+void stopRightMotor() {
+  digitalWrite(RA_H_BRIDGE, HIGH);
+  digitalWrite(RB_H_BRIDGE, HIGH);
+  digitalWrite(RA_H_BRIDGE, HIGH);
+  digitalWrite(RB_H_BRIDGE, HIGH);
+}
+
 // Set the both motor H_Bridge to 11 as to stop them
 void stopMotors() {
   digitalWrite(LA_H_BRIDGE, HIGH);

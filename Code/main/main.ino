@@ -10,10 +10,17 @@
 #include "us.h"
 #include "flame.h"
 
+#define A 'a'
+#define B 'b'
+#define C 'c'
+#define NOT_FOUND 'n'
+
 Extinguisher extinguisher;
 Reflection color_l(23);
 Reflection color_r(25);
-Mic mic(1);
+Mic mic(12);
+
+char dog_position = NOT_FOUND;
 
 void extinguishMovements(){
   for(int i = 0; i <= 5; i++){
@@ -56,17 +63,212 @@ void searchRoom(int room_side) {
   }  
 }
 
-void setup() {
-  startMotors();
-  Serial.begin(9600);
-  mic.start();
+void approachLine() {
+  moveLeftMotor(7);
+  moveRightMotor(7);
+  while(color_l.getColor() == Reflection::BLACK && color_r.getColor() == Reflection::BLACK) {
+    color_l.update();
+    color_r.update();
+    if(color_l.getColor() == Reflection::BLACK)
+      stopLeftMotor();
+    if(color_r.getColor() == Reflection::BLACK)
+      stopRightMotor();
+  }
+  stopMotors();
 }
 
-void loop(){
-  color_l.printColor();
-  color_r.printColor();
-  mic.printStatus();
-  printUS();
-  moveDistance(450, 30);
+void startToMiddle() {
+  resetController();
+  while(rightFrontUS() < 20) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+
+  resetController();
+  while(rightFrontUS() > 20) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+  float distance = counts2Dist((lenc_pos + renc_pos)/2.0);
+
+  moveDistance(600, -10);
+}
+
+void middleToRoom3() {
   turn(90);
+  resetController();
+  while(frontalUS() > 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+  delay(300);
+  turn(90);
+
+  approachLine();
+}
+
+void room3ToMiddle() {
+  moveDistance(600, -3);
+  turn(90);
+
+  resetController();
+  while(leftFrontUS() < 18) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+  delay(300);
+  moveDistance(600, 37);
+  delay(200);
+  turn(90);
+}
+
+void middleToRoom2() {
+  resetController();
+  while(frontalUS() < 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(700);
+  }
+  stopMotors();
+  turn(90);
+
+  approachLine();
+}
+
+void room2ToRoom1() {
+  moveDistance(600, -3);
+  turn(180);
+  moveDistance(600, 10);
+  approachLine();
+}
+
+void room1ToRoom4() {
+  resetController();
+  while(frontalUS() < 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(700);
+  }
+  stopMotors();
+  turn(-90);
+
+  if(dog_position == C)
+
+  resetController();
+}
+
+void room4ToStart() {}
+
+
+void track1() {
+  startToMiddle();
+  middleToRoom3();
+  room3ToMiddle();
+  middleToRoom2();
+  room2ToRoom1();
+  room1ToRoom4();
+  room4ToStart();
+}
+
+void track2() {
+  // startToRoom4();
+  // room4ToRoom1();
+  // room1ToRoom2();
+  // room2ToMiddle();
+  // middleToRoom3();
+  // room3ToMiddle();
+  // middleToStart();
+}
+
+void return1() {}
+void return2() {}
+void return3() {
+  resetController();
+  while(frontalUS() > 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+  delay(300);
+  turn(-90);
+
+  resetController();
+  while(leftFrontUS() < 18) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+  moveDistance(600, 37);
+  delay(200);
+  turn(-90);
+
+  resetController();
+  while(frontalUS() > 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+}
+void return4() {}
+
+int chooseTrack() {
+  if((leftFrontUS() + leftBackUS())/2 > (rightFrontUS() + rightBackUS())/2)
+    return 1;
+  return 2;
+}
+
+void setup() {
+  startMotors();
+  extinguisher.start();
+  Serial.begin(9600);
+}
+
+void loop() {
+  // if(chooseTrack() == 1)
+  //   track1();
+  // else
+  //   track2();
+
+  // stopMotors();
+  // while(1) {
+  //   mic.led->on();
+  //   extinguisher.led->off();
+  //   delay(500);
+  //   mic.led->off();
+  //   extinguisher.led->on();
+  //   delay(500);
+  // }
+  moveDistance(600, 30);
+  turn(90);
+  turn(-90);
+  moveDistance(600, -30);
 }
