@@ -42,7 +42,29 @@ void moveLeftMotor(float tension);  // sends received voltage to the motor. posi
 #define RMOT_PWM    8
 #define R_ENC       19
 void doEncoderR();                  // increments or decrements encoder position. Called by interruption
-void moveRightMotor(float tension); // sends received voltage to the motor. positive is forward, negative backwards
+// void moveRightMotor(float tension); // sends received voltage to the motor. positive is forward, negative backwards
+
+// === Left motor === //
+extern volatile long lenc_pos; // encoder's position
+extern long left_speed;        // motor speed
+extern byte l_way;       // motor's rotation direction
+extern float left_pwr_signal;
+extern float left_integral;
+extern float left_error;
+
+// === Right motor === //
+extern volatile long renc_pos; // encoder's position
+extern long right_speed;       // motor speed
+extern byte r_way;       // motor's rotation direction
+extern float right_pwr_signal;
+extern float right_integral;
+extern float right_error;
+
+// === Controller variables === //
+extern float relative_error;
+extern long now, last_update;
+extern float dt;
+extern float initial_degree;
 
 // === General functions === //
 

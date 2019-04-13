@@ -1,5 +1,4 @@
 #include "motors.h"
-#include "gyro.h"
 
 // === Left motor === //
 volatile long lenc_pos = 0; // encoder's position

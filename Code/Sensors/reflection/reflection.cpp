@@ -14,7 +14,7 @@ void Reflection::sort (bool *sample) {
     for (k = 1; k < SAMPLE_NUM; k++) {
         for (j = 0; j < SAMPLE_NUM - 1; j++) {
             if (sample[j] > sample[j + 1]) {
-                aux          = sample[j];
+                aux           = sample[j];
                 sample[j]     = sample[j + 1];
                 sample[j + 1] = aux;
             }
