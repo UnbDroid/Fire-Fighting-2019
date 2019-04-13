@@ -59,6 +59,9 @@ public:
 
   bool fire_exist = false;
   int fire_position = 0;
+  int first_turn = 0;
+  int second_turn = 0;
+  int walked_distance_room
 
   void searchFlame(int room_side);
   void extinguishFire();

@@ -31,29 +31,45 @@ void searchRoom(int room_side) {
   if (room_side == Extinguisher::RIGHT_SIDE) {
     extinguisher.searchFlame(Extinguisher::RIGHT_SIDE);
     if (extinguisher.fire_exist){  //verificar se da pra usar a variavel assim
-      //turn on LED
+      Extinguisher::led->on();
       moveDistance(450, 25); // valor para que todo o robo esteja dentro do quarto TESTAR
       turn(extinguisher.fire_position - 90); // verificar 2
       extinguisher.searchFlame(Extinguisher::RIGHT_SIDE);//search the flame again
       turn(extinguisher.fire_position - 90); // turn to the flame
-      //move close to the candle 
+      resetController();
+      dt = millis();
+      while(frontal_us() > 6){ // Try later
+        
+        controller(450);
+      }
+      extinguisher.walked_distance_room = (lenc_pos+renc_pos)/2
       extinguishMovements();
-      //Turn of LED 
+      Extinguisher::led->off();
     }
     
   } else {
     extinguisher.searchFlame(Extinguisher::LEFT_SIDE);
     if (extinguisher.fire_exist) {  //verificar se da pra usar a variavel assim
-      //turn on LED
+      Extinguisher::led->on();
       moveDistance(450, 25); // valor para que todo o robo esteja dentro do quarto TESTAR
-      turn(extinguisher.fire_position - 90); // verificar 2
+      extinguisher.first_turn = extinguisher.fire_position - 90;
+      turn(extinguisher.first_turn); // verificar 2
       extinguisher.searchFlame(Extinguisher::LEFT_SIDE);//search the flame again
-      turn(extinguisher.fire_position - 90); // turn to the flame
+      extinguisher.second_turn = extinguisher.second_turn - 90;
+      turn(extinguisher.second_turn); // turn to the flame
       //move close to the candle 
       extinguishMovements();
-      //Turn of LED
+      Extinguisher::led->off();
     }
   }  
+}
+
+void roomOut(){
+  turn(180);
+  moveDistance(450, extinguisher.walked_distance_room);
+  turn(-(extinguisher.second_turn + extinguisher.first_turn));
+  moveDistance(450, 25); //the same distance when entered the roomOut
+
 }
 
 void setup() {
