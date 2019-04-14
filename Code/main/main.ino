@@ -268,7 +268,7 @@ void room1ToRoom4() {
     }
     stopMotors();
     delay(300);
-    moveDistance(-5);
+    moveDistance(450, -5);
     turn(-90);
     approachLine();    
   }
