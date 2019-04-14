@@ -22,6 +22,16 @@ long now, last_update = 0;
 float dt;
 float initial_degree;
 
+// Calculates how many degrees the motor must rotate in order to achieve the distance received as argument
+float dist2Counts(float distance) {
+  return ((ENC_COUNTS*distance)/(2*PI*WHEEL_RADIUS));
+}
+
+// Calculates which distance was travelled by the robot when the encoders mark the received amount of counts
+float counts2Dist(float counts) {
+  return ((2*PI*WHEEL_RADIUS*ENC_COUNTS)/counts);
+}
+
 // The functions below increment or decrement the encoder counts depending on
 // which way the motor is rotating. They use interruptions.
 
@@ -46,6 +56,7 @@ void doEncoderR() {
 void moveLeftMotor(float tension) {
   int pwm;
 
+  Serial.println(lenc_pos);
   pwm = tension*255/BATTERY_LEVEL;
 
   if (pwm >= 0) {
@@ -59,10 +70,14 @@ void moveLeftMotor(float tension) {
     digitalWrite(LB_H_BRIDGE, HIGH);
   }
   analogWrite(LMOT_PWM, (byte)round(pwm));
+  if (lenc_pos > 500)
+    digitalWrite(27, HIGH);
+  else if (lenc_pos < -100)
+    digitalWrite(27, HIGH);
 }
 
 // For right motor
-void moveRightMotor(int tension) {
+void moveRightMotor(float tension) {
   float pwm;
 
   pwm = tension*255/BATTERY_LEVEL;
@@ -77,6 +92,20 @@ void moveRightMotor(int tension) {
     digitalWrite(RB_H_BRIDGE, LOW);
   }
   analogWrite(RMOT_PWM, (byte)round(pwm));
+}
+
+void stopLeftMotor() {
+  digitalWrite(LA_H_BRIDGE, HIGH);
+  digitalWrite(LB_H_BRIDGE, HIGH);
+  digitalWrite(LA_H_BRIDGE, HIGH);
+  digitalWrite(LB_H_BRIDGE, HIGH);
+}
+
+void stopRightMotor() {
+  digitalWrite(RA_H_BRIDGE, HIGH);
+  digitalWrite(RB_H_BRIDGE, HIGH);
+  digitalWrite(RA_H_BRIDGE, HIGH);
+  digitalWrite(RB_H_BRIDGE, HIGH);
 }
 
 // Resets all PI controller variables.Used everytime controller is used 
@@ -96,30 +125,6 @@ void startMotors() {
   pinMode(RA_H_BRIDGE, OUTPUT);
   pinMode(RB_H_BRIDGE, OUTPUT);
   pinMode(RMOT_PWM, OUTPUT);
-}
-
-// Calculates how many degrees the motor must rotate in order to achieve the distance received as argument
-float dist2Counts(float distance) {
-  return ((ENC_COUNTS*distance)/(2*PI*WHEEL_RADIUS));
-}
-
-// Calculates which distance was travelled by the robot when the encoders mark the received amount of counts
-float counts2Dist(float counts) {
-  return ((2*PI*WHEEL_RADIUS*ENC_COUNTS)/counts);
-}
-
-void stopLeftMotor() {
-  digitalWrite(LA_H_BRIDGE, HIGH);
-  digitalWrite(LB_H_BRIDGE, HIGH);
-  digitalWrite(LA_H_BRIDGE, HIGH);
-  digitalWrite(LB_H_BRIDGE, HIGH);
-}
-
-void stopRightMotor() {
-  digitalWrite(RA_H_BRIDGE, HIGH);
-  digitalWrite(RB_H_BRIDGE, HIGH);
-  digitalWrite(RA_H_BRIDGE, HIGH);
-  digitalWrite(RB_H_BRIDGE, HIGH);
 }
 
 // Set the both motor H_Bridge to 11 as to stop them
@@ -224,8 +229,7 @@ void moveDistance(float speed, int distance) {
 
   resetController();
 
-  while(abs(initial_position - abs((lenc_pos+renc_pos)/2)) < abs(pos)){
-      
+  while(abs(initial_position - abs((lenc_pos+renc_pos)/2)) < abs(pos)) {
     now = millis();
     dt = now - last_update;
 

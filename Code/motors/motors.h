@@ -23,26 +23,26 @@
 // Motor voltage when the robot is turning 
 #define TURN_TENSION 4
 
-// PI motor controller constants
+// PI mo-tor controller constants
 #define KP 0.0125
 #define KI 0.015
 #define KG 50
 
 // === Left motor === //
-#define LA_H_BRIDGE 38
-#define LB_H_BRIDGE 40
-#define LMOT_PWM    9
-#define L_ENC       18  
+#define LA_H_BRIDGE 40
+#define LB_H_BRIDGE 38
+#define LMOT_PWM    8
+#define L_ENC       19
 void doEncoderL();                  // increments or decrements encoder position. Called by interruption
 void moveLeftMotor(float tension);  // sends received voltage to the motor. positive is forward, negative backwards
 
 // === Right motor === //
-#define RA_H_BRIDGE 32
-#define RB_H_BRIDGE 34
-#define RMOT_PWM    8
-#define R_ENC       19
+#define RA_H_BRIDGE 34
+#define RB_H_BRIDGE 32
+#define RMOT_PWM    9
+#define R_ENC       18
 void doEncoderR();                  // increments or decrements encoder position. Called by interruption
-// void moveRightMotor(float tension); // sends received voltage to the motor. positive is forward, negative backwards
+void moveRightMotor(float tension); // sends received voltage to the motor. positive is forward, negative backwards
 
 // === Left motor === //
 extern volatile long lenc_pos; // encoder's position
@@ -68,11 +68,30 @@ extern float initial_degree;
 
 // === General functions === //
 
+// For left motor's encoder
+void doEncoderL();
+
+// For right motor's encoder
+void doEncoderR();
+
+// The functions below make the motor start with the power disired
+// For left motor
+void moveLeftMotor(float tension);
+
+// For right motor
+void moveRightMotor(float tension);
+
+void stopLeftMotor();
+
+void stopRightMotor();
+
 // Encoders' setup function
 void startMotors();
 
 // Calculates how many degrees the motor must rotate in order to achieve the distance received as argument
 float dist2Counts(float distance);
+
+float counts2Dist(float counts);
 
 // Resets all PI controller variables.Used everytime controller is used 
 void resetController();

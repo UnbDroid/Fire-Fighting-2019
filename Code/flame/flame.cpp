@@ -72,11 +72,15 @@ void FlameSensor::printFlame() {
   Serial.println(this->getAnalog());
 }
 
+void Extinguisher::start() {
+  servo.attach(3);
+}
+
 void Extinguisher::findFire(){ // Checks if there is a fire and does the average of the servo position to know where the flame is
   //int lastfire_analog = fire_analog;
   sensor->update();
-  if (sensor->getAnalog() <= FIRE) {   
-    Serial.println("Achei fogo");
+  if (sensor->getAnalog() <= FIRE) {
+    led->on();
     fire_exist = true;       // updates the fire existence status (MEDIA PONDERADA A FAZER)   
     count_fire++;          // counts to do the average math
     fire_position += servo_position;  // sum to do the average math

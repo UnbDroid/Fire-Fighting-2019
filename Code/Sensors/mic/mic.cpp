@@ -45,6 +45,7 @@ void Mic::start() {
   while(status == INACTIVE)
     this->update();
   led->on();
+  delay(1000);
   while(status == ACTIVE)
     this->update();
   led->off();

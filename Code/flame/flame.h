@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 #include "Servo.h"
+#include "led.h"
 
 class Pump {
 private:
@@ -39,11 +40,11 @@ private:
 	int servo_position;
   int count_fire;
 
-  Pump * pump = new Pump(38);
+  Pump * pump = new Pump(2);
   Servo servo;
-  FlameSensor * sensor = new FlameSensor(A0, 7);
+  FlameSensor * sensor = new FlameSensor(A15, 7);
+  LED * led = new LED(27); 
 
-  void findFire();
   void moveServo(int from_position, int to_position);
   void moveServoSearchingFlame(int from_position, int to_position);
 
@@ -60,8 +61,10 @@ public:
   bool fire_exist = false;
   int fire_position = 0;
 
+  void findFire();
   void searchFlame(int room_side);
   void extinguishFire();
+  void start();
 
 };
 

@@ -6,7 +6,7 @@
 
 class Mic {
 private:
-  const static int SAMPLE_NUM = 100;
+  const static int SAMPLE_NUM = 2;
   
   int pin;
   bool status = INACTIVE;
