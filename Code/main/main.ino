@@ -162,6 +162,7 @@ void room2ToRoom1() {
 
 void room1ToRoom4() {
   resetController();
+
   while(frontalUS() < 8) {
     now = millis();
     dt = now - last_update;
@@ -170,10 +171,107 @@ void room1ToRoom4() {
       controller(700);
   }
   stopMotors();
+  delay(300);
   turn(-90);
+  resetController();
+  while(color_l.getColor() == Reflection::BLACK && color_r.getColor() == Reflection::BLACK){
+    now = millis();
+    dt = now - last_update;
 
-  if(dog_position == C)
+    if(dt > TIME_STEP)
+      controller(700);
+  }
+  stopMotors();
+  delay(300);
+  moveDistance(600, -3);
+  approachLine();
+  resetController();
+  while(frontalUS() < 8) {
+    now = millis();
+    dt = now - last_update;
 
+    if(dt > TIME_STEP)
+      controller(700);
+  }
+  stopMotors();
+  float distance = counts2Dist((lenc_pos + renc_pos)/2.0);
+  if (distance < 100){
+    dog_position = B;
+    moveDistance(600, distance - 20);
+    turn(-90);
+    resetController();
+    while(leftFrontUS() > 18) {
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(600);
+    }
+    stopMotors();
+    delay(300);
+    moveDistance(600, 5);
+    resetController();
+    while(leftFrontUS() < 18) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+    }
+    stopMotors();
+    delay(300);
+    moveDistance(25);
+    turn(90);
+    resetController();
+    while(FrontUS() < 5) {
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(600);
+    }
+    stopMotors();
+    delay(300);
+
+    } else {
+      turn(-90);
+      resetController();
+      while(frontalUS() < 8) {
+        now = millis();
+        dt = now - last_update;
+
+        if(dt > TIME_STEP)
+          controller(450);
+      }
+      stopMotors();
+      delay(300);
+    if (dog_position != A){
+      resetController();
+      while(leftFrontUS() > 20 || leftFrontUS() == 0){
+        now = millis();
+        dt = now - last_update;
+
+        if(dt > TIME_STEP)
+          controller(-450);
+      }
+      stopMotors();
+      delay(300);
+      moveDistance(600, -3);
+    }
+    resetController();
+    while(leftFrontUS() < 20){
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(-700);
+    }
+    stopMotors();
+    delay(300);
+    moveDistance(-5);
+    turn(-90);
+    approachLine();    
+  }
   resetController();
 }
 
