@@ -54,3 +54,16 @@ void Mic::printStatus() {
   this->update();
   Serial.println(status);
 }
+
+void Mic::gambiarra(int tests){
+  int count;
+  while(count<tests){
+    count = 0;
+    for(int i=0;i<=3*tests/2;i++){
+      if (digitalRead(pin) == HIGH){
+        count++;
+      }
+      delay(1);
+    }
+  }
+}
