@@ -54,3 +54,55 @@ void Mic::printStatus() {
   this->update();
   Serial.println(status);
 }
+
+void Mic::hear(int threshold){
+  //Counters for the moving average
+  int count[5];
+  count[0] = 0;
+  count[1] = 0;
+  count[2] = 0;
+  count[3] = 0;
+  count[4] = 0;
+
+  //timer
+  int t;
+
+  //time step
+  int tStep;
+
+  int freq;
+
+  //keep hearing untill appears sound with frequency above the threshold
+  do{
+    //Set Counters
+    count[4]=count[3];
+    count[3]=count[2];
+    count[2]=count[1];
+    count[1]=count[0];
+    count[0]=0;
+
+    //Count pulses in one period
+    t = millis();
+    while((millis() - t) <= tStep){
+      if(digitalRead(pin) == HIGH){
+        count[0] = count[0] + 1;
+      }
+      delay(1);     //Delay needed to avoid overflow
+    }
+
+    //Calculate corresponding frequency for amount counted
+    freq = 0;
+    for (int i=0;i<5;i++){
+      freq = freq + count[i];
+    }
+    freq = freq * 1000    //convert mHz to Hz
+                /tStep;
+    
+  }while(freq < threshold);
+  
+  //Indicating that right sound was detected
+  led->on();
+  delay(1000);
+  led->off();
+
+}

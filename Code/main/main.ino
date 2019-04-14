@@ -79,10 +79,7 @@ void setup() {
 }
 
 void loop(){
-  color_l.printColor();
-  color_r.printColor();
-  mic.printStatus();
-  printUS();
-  moveDistance(450, 30);
-  turn(90);
+  // moveDistance(450, 30);
+  // turn(90);
+  
 }

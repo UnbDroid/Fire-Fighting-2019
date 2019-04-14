@@ -2,11 +2,11 @@
 #define MIC_H
 
 #include "Arduino.h"
-#include "led.h"
+#include "/home/digo/Documents/DROID/FireFighting/Fire-Fighting-2019/Code/Sensors/led/led.h"
 
 class Mic {
 private:
-  const static int SAMPLE_NUM = 2;
+  const static int SAMPLE_NUM = 100;
   
   int pin;
   bool status = INACTIVE;
@@ -24,7 +24,6 @@ public:
   void update();
   bool getStatus();
   void printStatus();
-  void hear(int threshold);
 };
 
 #endif // MIC_H
