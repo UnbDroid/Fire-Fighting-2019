@@ -2,3 +2,7 @@
 Code/Sensors/\.vscode/
 
 *.ipch
+
+Code/\.vscode/
+
+Code/mexidin/mixido\.ino
