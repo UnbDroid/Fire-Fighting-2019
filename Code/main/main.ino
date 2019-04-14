@@ -38,27 +38,27 @@ void searchRoom(int room_side) {
   if (room_side == Extinguisher::RIGHT_SIDE) {
     extinguisher.searchFlame(Extinguisher::RIGHT_SIDE);
     if (extinguisher.fire_exist){  //verificar se da pra usar a variavel assim
-      //turn on LED
+      extinguisher.led->on();
       moveDistance(450, 25); // valor para que todo o robo esteja dentro do quarto TESTAR
       turn(extinguisher.fire_position - 90); // verificar 2
       extinguisher.searchFlame(Extinguisher::RIGHT_SIDE);//search the flame again
       turn(extinguisher.fire_position - 90); // turn to the flame
       //move close to the candle 
       extinguishMovements();
-      //Turn of LED 
+      extinguisher.led->off();
     }
     
   } else {
     extinguisher.searchFlame(Extinguisher::LEFT_SIDE);
     if (extinguisher.fire_exist) {  //verificar se da pra usar a variavel assim
-      //turn on LED
+      extinguisher.led->on();
       moveDistance(450, 25); // valor para que todo o robo esteja dentro do quarto TESTAR
       turn(extinguisher.fire_position - 90); // verificar 2
       extinguisher.searchFlame(Extinguisher::LEFT_SIDE);//search the flame again
       turn(extinguisher.fire_position - 90); // turn to the flame
       //move close to the candle 
       extinguishMovements();
-      //Turn of LED
+      extinguisher.led->off();
     }
   }  
 }

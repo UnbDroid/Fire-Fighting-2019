@@ -60,6 +60,8 @@ public:
   bool fire_exist = false;
   int fire_position = 0;
 
+  LED * led = new LED(27);
+
   void searchFlame(int room_side);
   void extinguishFire();
 
