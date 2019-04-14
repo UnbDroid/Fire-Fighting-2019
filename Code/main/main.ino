@@ -15,6 +15,7 @@
 #define C 'c'
 #define NOT_FOUND 'n'
 
+
 Extinguisher extinguisher;
 Reflection color_l(23);
 Reflection color_r(25);
@@ -38,27 +39,27 @@ void searchRoom(int room_side) {
   if (room_side == Extinguisher::RIGHT_SIDE) {
     extinguisher.searchFlame(Extinguisher::RIGHT_SIDE);
     if (extinguisher.fire_exist){  //verificar se da pra usar a variavel assim
-      //turn on LED
+      extinguisher.led->on();
       moveDistance(450, 25); // valor para que todo o robo esteja dentro do quarto TESTAR
       turn(extinguisher.fire_position - 90); // verificar 2
       extinguisher.searchFlame(Extinguisher::RIGHT_SIDE);//search the flame again
       turn(extinguisher.fire_position - 90); // turn to the flame
       //move close to the candle 
       extinguishMovements();
-      //Turn of LED 
+      extinguisher.led->off();
     }
     
   } else {
     extinguisher.searchFlame(Extinguisher::LEFT_SIDE);
     if (extinguisher.fire_exist) {  //verificar se da pra usar a variavel assim
-      //turn on LED
+      extinguisher.led->on();
       moveDistance(450, 25); // valor para que todo o robo esteja dentro do quarto TESTAR
       turn(extinguisher.fire_position - 90); // verificar 2
       extinguisher.searchFlame(Extinguisher::LEFT_SIDE);//search the flame again
       turn(extinguisher.fire_position - 90); // turn to the flame
       //move close to the candle 
       extinguishMovements();
-      //Turn of LED
+      extinguisher.led->off();
     }
   }  
 }
@@ -97,7 +98,7 @@ void startToMiddle() {
       controller(600);
   }
   stopMotors();
-  float distance = counts2Dist((lenc_pos + renc_pos)/2.0);
+  //float distance = counts2Dist((lenc_pos + renc_pos)/2.0);
 
   moveDistance(600, -10);
 }
@@ -124,7 +125,7 @@ void room3ToMiddle() {
   turn(90);
 
   resetController();
-  while(leftFrontUS() < 18) {
+  while(rightFrontUS() < 18) {
     now = millis();
     dt = now - last_update;
 
@@ -140,7 +141,7 @@ void room3ToMiddle() {
 
 void middleToRoom2() {
   resetController();
-  while(frontalUS() < 8) {
+  while(frontalUS() > 8) {
     now = millis();
     dt = now - last_update;
 
@@ -172,23 +173,112 @@ void room1ToRoom4() {
   stopMotors();
   turn(-90);
 
-  if(dog_position == C)
+  delay(300);
+  resetController();
+  while(color_l.getColor() == Reflection::BLACK && color_r.getColor() == Reflection::BLACK){
+    now = millis();
+    dt = now - last_update;
 
+    if(dt > TIME_STEP)
+      controller(700);
+  }
+  stopMotors();
+  delay(300);
+  moveDistance(600, -3);
+  approachLine();
+  resetController();
+  while(frontalUS() < 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(700);
+  }
+  stopMotors();
+  float distance = counts2Dist((lenc_pos + renc_pos)/2.0);
+  if (distance < 100){
+    dog_position = B;
+    moveDistance(600, distance - 20);
+    turn(-90);
+    resetController();
+    while(leftFrontUS() > 18) {
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(600);
+    }
+    stopMotors();
+    delay(300);
+    moveDistance(600, 5);
+    resetController();
+    while(leftFrontUS() < 18) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+    }
+    stopMotors();
+    delay(300);
+    moveDistance(25);
+    turn(90);
+    resetController();
+    while(FrontUS() < 5) {
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(600);
+    }
+    stopMotors();
+    delay(300);
+
+    } else {
+      turn(-90);
+      resetController();
+      while(frontalUS() < 8) {
+        now = millis();
+        dt = now - last_update;
+
+        if(dt > TIME_STEP)
+          controller(450);
+      }
+      stopMotors();
+      delay(300);
+    if (dog_position != A){
+      resetController();
+      while(leftFrontUS() > 20 || leftFrontUS() == 0){
+        now = millis();
+        dt = now - last_update;
+
+        if(dt > TIME_STEP)
+          controller(-450);
+      }
+      stopMotors();
+      delay(300);
+      moveDistance(600, -3);
+    }
+    resetController();
+    while(leftFrontUS() < 20){
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(-700);
+    }
+    stopMotors();
+    delay(300);
+    moveDistance(-5);
+    turn(-90);
+    approachLine();    
+  }
   resetController();
 }
 
 void room4ToStart() {}
 
 
-void track1() {
-  startToMiddle();
-  middleToRoom3();
-  room3ToMiddle();
-  middleToRoom2();
-  room2ToRoom1();
-  room1ToRoom4();
-  room4ToStart();
-}
 
 void track2() {
   // startToRoom4();
@@ -200,8 +290,40 @@ void track2() {
   // middleToStart();
 }
 
-void return1() {}
-void return2() {}
+void return1() {
+  resetController();
+  moveDistance(600, 37);
+  stopMotors();
+  delay(300);
+  turn(90);
+  
+  resetController();
+  while(frontalUS() > 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+}
+void return2() {
+  resetController();
+  moveDistance(600, 37);
+  stopMotors();
+  delay(300);
+  turn(-90);
+  
+  resetController();
+  while(frontalUS() > 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+}
 void return3() {
   resetController();
   while(frontalUS() > 8) {
@@ -216,7 +338,7 @@ void return3() {
   turn(-90);
 
   resetController();
-  while(leftFrontUS() < 18) {
+  while(rightFrontUS() < 18) {
     now = millis();
     dt = now - last_update;
 
@@ -238,12 +360,114 @@ void return3() {
   }
   stopMotors();
 }
-void return4() {}
+void return4() {
+  resetController();
+  while(frontalUS() > 8) {
+    now = millis();
+    dt = now - last_update;
 
-int chooseTrack() {
-  if((leftFrontUS() + leftBackUS())/2 > (rightFrontUS() + rightBackUS())/2)
-    return 1;
-  return 2;
+    if(dt > TIME_STEP)
+      controller(600);
+  }
+  stopMotors();
+  delay(200);
+  if(dog_position != 'A'){
+    turn(-90);
+    resetController();
+    while(frontalUS() > 8) {
+    now = millis();
+    dt = now - last_update;
+
+    if(dt > TIME_STEP)
+      controller(600);
+    }
+    stopMotors();
+  }
+  else{
+    turn(90);
+    
+    resetController();
+    while(frontalUS() > 8) {
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(600);
+    }
+    stopMotors();
+    delay(300);
+    turn(90);
+    
+    resetController();
+    moveDistance(600, 5);
+    while(rightFrontUS() < 18) {
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(600);
+    }
+    stopMotors();
+    moveDistance(600, 37);
+    delay(200);
+    turn(90);
+    
+    resetController();
+    moveDistance(600, 5);
+    while(rightFrontUS() < 18) {
+     now = millis();
+     dt = now - last_update;
+
+     if(dt > TIME_STEP)
+      controller(600);
+    }
+    stopMotors();
+    moveDistance(600, 37);
+    delay(200);
+    turn(90);
+    
+    resetController();
+    while(frontalUS() > 8) {
+      now = millis();
+      dt = now - last_update;
+
+      if(dt > TIME_STEP)
+        controller(600);
+    }
+    stopMotors();
+  }
+}
+
+
+int track1() {
+  startToMiddle();
+  middleToRoom3();
+  searchRoom(Extinguisher::RIGHT_SIDE);
+  if(extinguisher.fire_exist){
+    return3();
+    return 0;
+  }
+  room3ToMiddle();
+  middleToRoom2();
+  searchRoom(Extinguisher::RIGHT_SIDE);
+  if (extinguisher.fire_exist) {
+    return2();
+    return 0;
+  }  
+  room2ToRoom1();
+  searchRoom(Extinguisher::LEFT_SIDE);
+  if(extinguisher.fire_exist){
+    return1();
+    return 0;
+  }
+  room1ToRoom4();
+  searchRoom(Extinguisher::LEFT_SIDE);
+  room4ToStart();
+}
+
+void chooseTrack() {
+  if(( ((rightFrontUS() + rightBackUS()) /2) == 0) ||((rightFrontUS() + rightBackUS()) /2) > 20) )
+    turn(90);
 }
 
 void setup() {
@@ -267,8 +491,16 @@ void loop() {
   //   extinguisher.led->on();
   //   delay(500);
   // }
-  moveDistance(600, 30);
-  turn(90);
-  turn(-90);
-  moveDistance(600, -30);
+  
+  
+  // moveDistance(600, 30);
+  // turn(90);
+  // turn(-90);
+  // moveDistance(600, -30);
+
+
+  mic.gambiarra(150);
+  chooseTrack();
+  track1();
+
 }

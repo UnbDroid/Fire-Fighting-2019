@@ -24,6 +24,7 @@ public:
   void update();
   bool getStatus();
   void printStatus();
+  void gambiarra(int tests);
 };
 
 #endif // MIC_H
