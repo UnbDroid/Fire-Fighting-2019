@@ -42,6 +42,7 @@ private:
   Pump * pump = new Pump(38);
   Servo servo;
   FlameSensor * sensor = new FlameSensor(A0, 7);
+  LED * led = new LED(27);
 
   void findFire();
   void moveServo(int from_position, int to_position);
